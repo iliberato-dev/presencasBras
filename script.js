@@ -1,7 +1,7 @@
 // =======================================================================
 // CONFIGURAÇÃO DE URLS (AJUSTE AQUI)
 // =======================================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzF1bKzZoIImSjpirToSYzGWKhG-uTTY49MtY-VEIUhu0ph72KYBYM8_tI1SK56zT4e/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxQG5KMwOugQVSqEm9M2G2dwRoKKygmwQTxoWZMg05Uf7QJlkDi6zfocjEFdxbiXkfy/exec";
 const API_URL = window.location.hostname.includes('localhost')
   ? "http://localhost:3000"
   : "https://presencasbras.onrender.com";

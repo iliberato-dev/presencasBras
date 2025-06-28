@@ -1,46 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Controle de Presença</title>
-  <link rel="shortcut icon" href="logo.jpg"/>
-  <link href="output.css" rel="stylesheet"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Presença - AD Min. Brás</title>
+    <link rel="shortcut icon" href="logo.jpg" type="image/x-icon">
+    <!-- Inclui Tailwind CSS para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script src="script.js" defer></script>
 </head>
-<body class="font-inter bg-brand-900 min-h-screen p-4">
-  <div class="main-card mx-auto p-6 max-w-4xl fade-in">
-    <header class="text-center mb-6">
-      <img src="logo.jpg" alt="Logo" class="logo-ad mx-auto mb-2"/>
-      <h1 class="text-3xl font-bold text-gray-900">Controle de Presença</h1>
-      <p class="text-lg text-gray-700">AD Campo Vila Solange - Brás</p>
-    </header>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="main-card p-6 md:p-8 w-full max-w-4xl fade-in">
+        <!-- Cabeçalho da Aplicação -->
+        <div class="flex flex-col items-center mb-6">
+            <img src="logo.jpg" alt="Logo AD Brás" class="logo-ad shadow-lg">
+            <h1 class="text-3xl font-bold text-center text-gray-900 drop-shadow mb-1">
+                Controle de Presença
+            </h1>
+            <span class="text-lg text-gray-700 font-medium tracking-wide">AD Campo Vila Solange - Brás</span>
+        </div>
 
-    <!-- Filtros -->
-    <div class="grid gap-4 grid-cols-1 lg:grid-cols-4 mb-6">
-      <input id="filterName" type="text" placeholder="Nome" class="input-field"/>
-      <select id="filterPeriodo" class="input-field">
-        <option value="">Todos Períodos</option>
-        <option>Manhã</option>
-        <option>Tarde</option>
-        <option>Noite</option>
-      </select>
-      <select id="filterLider" class="input-field"><option>Todos Líderes</option></select>
-      <select id="filterGape" class="input-field"><option>Todos GAPE</option></select>
+        <!-- Seção de Filtros -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div>
+                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-1">Nome:</label>
+                <input type="text" id="filterName" placeholder="Buscar por nome" class="input-field w-full">
+            </div>
+            <div>
+                <label for="filterPeriodo" class="block text-sm font-medium text-gray-700 mb-1">Período:</label>
+                <select id="filterPeriodo" class="input-field w-full">
+                    <option value="">Todos</option>
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                </select>
+            </div>
+            <div>
+                <label for="filterLider" class="block text-sm font-medium text-gray-700 mb-1">Líder:</label>
+                <select id="filterLider" class="input-field w-full">
+                    <option value="">Todos</option>
+                    <!-- Opções serão preenchidas via JS -->
+                </select>
+            </div>
+            <div>
+                <label for="filterGape" class="block text-sm font-medium text-gray-700 mb-1">GAPE:</label>
+                <select id="filterGape" class="input-field w-full">
+                    <option value="">Todos</option>
+                    <!-- Opções serão preenchidas via JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Botões de Filtro -->
+        <div class="flex flex-row gap-3 mb-6 justify-center bg-gradient-to-r from-blue-100 via-blue-50 to-blue-100 rounded-xl p-4 shadow-lg">
+            <button id="applyFiltersBtn" class="btn-primary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md">Aplicar Filtros</button>
+            <button id="clearFiltersBtn" class="btn-secondary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md">Limpar Filtros</button>
+        </div>
+
+        <!-- Mensagens de Status -->
+        <div id="messageArea" class="message-box hidden" role="alert"></div>
+
+
+        <!-- Cards de Membros (nova estrutura) -->
+        <div id="membersCardsContainer" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <!-- Os cards serão gerados aqui via JavaScript -->
+        </div>
+
+    
     </div>
 
-    <!-- Botões -->
-    <div class="flex gap-4 mb-6">
-      <button id="applyFiltersBtn" class="btn-primary-dark flex-1">Aplicar Filtros</button>
-      <button id="clearFiltersBtn" class="btn-secondary-dark flex-1">Limpar Filtros</button>
-    </div>
-
-    <!-- Mensagem -->
-    <div id="messageArea" class="message-box hidden"></div>
-
-    <!-- Cards -->
-    <div id="membersCardsContainer" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3"></div>
-  </div>
-
-  <script type="module" src="script.js"></script>
+   
 </body>
 </html>

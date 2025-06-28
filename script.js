@@ -39,13 +39,15 @@ function showMessage(text, type = "info") {
 }
 
 // =======================================================================
-// UTIL: FETCH AO GAS (GET)
+// UTIL: FETCH AO GAS (GET) – já retorna só o `dados` do envelope
 // =======================================================================
 async function fetchGAS(tipo) {
-  const res = await fetch(`${API_URL}/presenca?tipo=${tipo}`);
+  const res  = await fetch(`${API_URL}/presenca?tipo=${tipo}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const { dados } = await res.json();    // <--- desestrutura aqui
+  return dados;
 }
+
 
 // =======================================================================
 // 1) CARREGA MEMBROS (GET getMembros)
@@ -53,17 +55,20 @@ async function fetchGAS(tipo) {
 async function loadMembers() {
   dom.cards.innerHTML = `<p class="text-center py-8">Carregando membros…</p>`;
   try {
-    const payload = await fetchGAS("getMembros");
-    allMembers = payload.membros || [];
+    // aqui fetchGAS retorna { membros: [ ... ] }
+    const { membros } = await fetchGAS("getMembros");
+    allMembers = membros || [];
     showMessage(`Carregados ${allMembers.length} membros`, "success");
   } catch (err) {
     console.error("Erro ao carregar membros:", err);
     allMembers = [];
     showMessage("Erro ao carregar membros", "error");
   }
+
   populateFilters();
   applyFilters();
 }
+
 
 // =======================================================================
 // 2) POPULA FILTROS (Líder e GAPE)

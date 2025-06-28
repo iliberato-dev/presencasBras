@@ -1,7 +1,6 @@
 // =======================================================================
-// CONFIGURAÇÃO DE URLS (AJUSTE AQUI)
+// CONFIGURAÇÃO DE URLS
 // =======================================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxQG5KMwOugQVSqEm9M2G2dwRoKKygmwQTxoWZMg05Uf7QJlkDi6zfocjEFdxbiXkfy/exec";
 const API_URL = window.location.hostname.includes('localhost')
   ? "http://localhost:3000"
   : "https://presencasbras.onrender.com";
@@ -10,14 +9,14 @@ const API_URL = window.location.hostname.includes('localhost')
 // SHORTCUTS PARA DOM
 // =======================================================================
 const dom = {
-  filterName:   document.getElementById("filterName"),
-  filterPer:    document.getElementById("filterPeriodo"),
-  filterLid:    document.getElementById("filterLider"),
-  filterGape:   document.getElementById("filterGape"),
-  applyBtn:     document.getElementById("applyFiltersBtn"),
-  clearBtn:     document.getElementById("clearFiltersBtn"),
-  cards:        document.getElementById("membersCardsContainer"),
-  messageArea:  document.getElementById("messageArea")
+  filterName:  document.getElementById("filterName"),
+  filterPer:   document.getElementById("filterPeriodo"),
+  filterLid:   document.getElementById("filterLider"),
+  filterGape:  document.getElementById("filterGape"),
+  applyBtn:    document.getElementById("applyFiltersBtn"),
+  clearBtn:    document.getElementById("clearFiltersBtn"),
+  cards:       document.getElementById("membersCardsContainer"),
+  messageArea: document.getElementById("messageArea"),
 };
 
 // =======================================================================
@@ -39,45 +38,43 @@ function showMessage(text, type = "info") {
 }
 
 // =======================================================================
-// UTIL: FETCH AO GAS (GET) – já retorna só o `dados` do envelope
+// UTIL: FETCH AO GAS (GET)
 // =======================================================================
 async function fetchGAS(tipo) {
   const res = await fetch(`${API_URL}/presenca?tipo=${tipo}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();        // <<== retorna { tipoRecebido, dados }
+  // retorna { tipoRecebido, dados: { membros: [...], ... } }
+  return res.json();
 }
-
 
 // =======================================================================
 // 1) CARREGA MEMBROS (GET getMembros)
 // =======================================================================
 async function loadMembers() {
   dom.cards.innerHTML = `<p class="text-center py-8">Carregando membros…</p>`;
+
   try {
     const envelope = await fetchGAS("getMembros");
-    // envelope === { tipoRecebido:"getMembros", dados:{ membros:[…] } }
-    const membros = envelope.dados && envelope.dados.membros
-      ? envelope.dados.membros
-      : [];
-    allMembers = membros;
+    // envelope.dados.membros é o array que precisamos
+    allMembers = envelope.dados?.membros || [];
     showMessage(`Carregados ${allMembers.length} membros`, "success");
   } catch (err) {
     console.error("Erro ao carregar membros:", err);
     allMembers = [];
     showMessage("Erro ao carregar membros", "error");
   }
+
   populateFilters();
   applyFilters();
 }
-
 
 // =======================================================================
 // 2) POPULA FILTROS (Líder e GAPE)
 // =======================================================================
 function populateFilters() {
-  const unique = arr => [...new Set(arr)].sort();
-  const lideres = unique(allMembers.map(m => m.Lider).filter(Boolean));
-  const gapes   = unique(allMembers.map(m => m.GAPE).filter(Boolean));
+  const unique = arr => [...new Set(arr)].filter(Boolean).sort();
+  const lideres = unique(allMembers.map(m => m.Lider));
+  const gapes   = unique(allMembers.map(m => m.GAPE));
 
   dom.filterLid.innerHTML = `<option value="">Todos Líderes</option>` +
     lideres.map(l => `<option>${l}</option>`).join("");
@@ -99,10 +96,10 @@ function applyFilters() {
     const p = (m.Periodo || "").toLowerCase();
     const l = (m.Lider   || "").toLowerCase();
     const g = (m.GAPE    || "").toLowerCase();
-    return (!qName || n.includes(qName))
-        && (!qPer  || p === qPer)
-        && (!qLid  || l === qLid)
-        && (!qGape || g === qGape);
+    return (!qName || n.includes(qName)) &&
+           (!qPer  || p === qPer)      &&
+           (!qLid  || l === qLid)      &&
+           (!qGape || g === qGape);
   });
 
   showMessage(`Encontrados ${filteredMembers.length}`, "info");
@@ -114,7 +111,8 @@ function applyFilters() {
 // =======================================================================
 async function renderCards() {
   dom.cards.innerHTML = "";
-  if (!filteredMembers.length) {
+
+  if (filteredMembers.length === 0) {
     dom.cards.innerHTML = `
       <p class="text-center py-8 text-gray-500">
         Nenhum membro encontrado.
@@ -125,7 +123,8 @@ async function renderCards() {
   // busca o total de presenças UMA VEZ
   let presencasTotal = {};
   try {
-    presencasTotal = await fetchGAS("presencasTotal");
+    const env = await fetchGAS("presencasTotal");
+    presencasTotal = env.dados || {};
   } catch {
     console.warn("Falha ao buscar presenças totais");
   }
@@ -134,7 +133,7 @@ async function renderCards() {
     const nome  = m.Nome || "—";
     const count = presencasTotal[nome] || 0;
 
-    // cria card
+    // monta o card
     const card = document.createElement("div");
     card.className = "fade-in-row bg-white rounded-xl shadow-md p-4";
     card.style.animationDelay = `${i * 0.04}s`;
@@ -151,34 +150,33 @@ async function renderCards() {
         <input type="checkbox" class="presence-checkbox"/>
         <span>Presente</span>
       </label>
-      <button class="btn-confirm-presence mt-2 hidden
-         bg-gradient-to-r from-green-700 to-green-400
-         hover:from-green-600 hover:to-green-300
-         text-white font-semibold
-         rounded-lg px-4 py-2
-         transition">
+      <button class="btn-confirm-presence
+                     mt-2 hidden
+                     bg-gradient-to-r from-green-700 to-green-400
+                     hover:from-green-600 hover:to-green-300
+                     text-white font-semibold
+                     rounded-lg px-4 py-2
+                     transition">
         Confirmar Presença
       </button>
       <p class="presence-info text-xs text-green-700 mt-1 hidden"></p>
     `;
     dom.cards.appendChild(card);
 
-    // elementos
+    // interações
     const checkbox = card.querySelector(".presence-checkbox");
     const btn      = card.querySelector(".btn-confirm-presence");
     const info     = card.querySelector(".presence-info");
     const countEl  = card.querySelector(".presencas-total");
 
-    // exibe botão ao marcar checkbox
     checkbox.addEventListener("change", () => {
       btn.classList.toggle("hidden", !checkbox.checked);
     });
 
-    // ao confirmar presença
     btn.addEventListener("click", async () => {
-      const now = new Date();
+      const now         = new Date();
       const [date, time] = now.toLocaleString("pt-BR").split(" ");
-      info.textContent = `Marcado em ${date} ${time}`;
+      info.textContent  = `Marcado em ${date} ${time}`;
       info.classList.remove("hidden");
       checkbox.disabled = true;
       btn.classList.add("hidden");
@@ -189,9 +187,9 @@ async function renderCards() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nome, data: date, hora: time, sheet: "PRESENCAS" })
         });
-        // re-fetch para atualizar o contador total
-        const updated = await fetchGAS("presencasTotal");
-        countEl.textContent = updated[nome] || count + 1;
+        // atualiza só este contador
+        const upd = await fetchGAS("presencasTotal");
+        countEl.textContent = upd.dados?.[nome] || count + 1;
         showMessage(`Presença de ${nome} registrada!`, "success");
       } catch (err) {
         console.error("Erro ao enviar presença:", err);
@@ -218,58 +216,6 @@ dom.clearBtn.addEventListener("click", () => {
   dom.filterLid.addEventListener(evt, applyFilters);
   dom.filterGape.addEventListener(evt, applyFilters);
 });
-// =======================================================================
-// 1) CARREGA MEMBROS (GET getMembros c/ cache em sessionStorage)
-// =======================================================================
-async function loadMembers() {
-  dom.cards.innerHTML = `<p class="text-center py-8">Carregando membros…</p>`;
-  
-  // Tenta ler do cache
-  const cacheKey = 'membersCache';
-  let membros = null;
-  const cacheRaw = sessionStorage.getItem(cacheKey);
-  if (cacheRaw) {
-    try {
-      membros = JSON.parse(cacheRaw);
-      console.log('Usando membros do cache:', membros.length);
-    } catch {}
-  }
-
-  // Se não tiver no cache, busca do server
-  if (!membros) {
-    try {
-      const envelope = await fetchGAS("getMembros");
-      // envelope = { tipoRecebido:"getMembros", dados:{ membros:[…] } }
-      membros = envelope.dados?.membros || [];
-      // grava no cache
-      sessionStorage.setItem(cacheKey, JSON.stringify(membros));
-      console.log('Buscou do GAS e armazenou cache:', membros.length);
-      showMessage(`Carregados ${membros.length} membros do servidor`, "success");
-    } catch (err) {
-      console.error("Erro ao carregar membros:", err);
-      membros = [];  
-      showMessage("Erro ao carregar membros", "error");
-    }
-  } else {
-    showMessage(`Carregados ${membros.length} membros do cache`, "info");
-  }
-
-  allMembers = membros;
-  populateFilters();
-  applyFilters();
-}
-
-// =======================================================================
-// BOTÃO PARA LIMPAR O CACHE (caso queira forçar novo fetch)
-// =======================================================================
-const clearCacheBtn = document.createElement('button');
-clearCacheBtn.textContent = 'Recarregar do servidor';
-clearCacheBtn.className = 'btn-secondary-dark mb-4';
-clearCacheBtn.addEventListener('click', () => {
-  sessionStorage.removeItem('membersCache');
-  loadMembers();
-});
-dom.cards.parentNode.insertBefore(clearCacheBtn, dom.cards);
 
 // carrega tudo após DOM pronto
 window.addEventListener("DOMContentLoaded", loadMembers);

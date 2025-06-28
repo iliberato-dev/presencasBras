@@ -2,7 +2,7 @@
 // CONFIGURAÇÃO DE URLS (AJUSTE AQUI)
 // =======================================================================
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzF1bKzZoIImSjpirToSYzGWKhG-uTTY49MtY-VEIUhu0ph72KYBYM8_tI1SK56zT4e/exec";
-const API_URL = "http://localhost:3000";
+const API_URL = "https://presencasbras.onrender.com";
 
 // =======================================================================
 // SHORTCUTS PARA DOM

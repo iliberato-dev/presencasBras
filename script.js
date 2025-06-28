@@ -145,7 +145,12 @@ async function renderCards() {
         <input type="checkbox" class="presence-checkbox"/>
         <span>Presente</span>
       </label>
-      <button class="btn-confirm-presence mt-2 hidden">
+      <button class="btn-confirm-presence mt-2 hidden
+         bg-gradient-to-r from-green-700 to-green-400
+         hover:from-green-600 hover:to-green-300
+         text-white font-semibold
+         rounded-lg px-4 py-2
+         transition">
         Confirmar Presença
       </button>
       <p class="presence-info text-xs text-green-700 mt-1 hidden"></p>

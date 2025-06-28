@@ -30,14 +30,12 @@ let filteredMembers = [];
 // UTIL: EXIBE MENSAGENS
 // =======================================================================
 function showMessage(text, type = "info") {
-  const { messageArea } = dom;
-  messageArea.textContent = text;
-  messageArea.className = `message-box show ${
+  dom.messageArea.textContent = text;
+  dom.messageArea.className = `message-box show ${
     type === "success" ? "message-success" :
     type === "error"   ? "message-error" : ""
   }`;
-  // remove após 3,5s
-  setTimeout(() => messageArea.classList.remove("show"), 3500);
+  setTimeout(() => dom.messageArea.classList.remove("show"), 3500);
 }
 
 // =======================================================================
@@ -49,7 +47,6 @@ async function fetchGAS(tipo) {
   return res.json();
 }
 
-
 // =======================================================================
 // 1) CARREGA MEMBROS (GET getMembros)
 // =======================================================================
@@ -57,7 +54,7 @@ async function loadMembers() {
   dom.cards.innerHTML = `<p class="text-center py-8">Carregando membros…</p>`;
   try {
     const payload = await fetchGAS("getMembros");
-    allMembers = payload.membros || payload.data || [];
+    allMembers = payload.membros || [];
     showMessage(`Carregados ${allMembers.length} membros`, "success");
   } catch (err) {
     console.error("Erro ao carregar membros:", err);
@@ -92,10 +89,10 @@ function applyFilters() {
   const qGape = dom.filterGape.value.toLowerCase().trim();
 
   filteredMembers = allMembers.filter(m => {
-    const n = (m.Nome   || "").toLowerCase();
-    const p = (m.Periodo|| "").toLowerCase();
-    const l = (m.Lider  || "").toLowerCase();
-    const g = (m.GAPE   || "").toLowerCase();
+    const n = (m.Nome    || "").toLowerCase();
+    const p = (m.Periodo || "").toLowerCase();
+    const l = (m.Lider   || "").toLowerCase();
+    const g = (m.GAPE    || "").toLowerCase();
     return (!qName || n.includes(qName))
         && (!qPer  || p === qPer)
         && (!qLid  || l === qLid)
@@ -119,17 +116,17 @@ async function renderCards() {
     return;
   }
 
-  // busca presenças do mês UMA VEZ
-  let presencasMes = {};
+  // busca o total de presenças UMA VEZ
+  let presencasTotal = {};
   try {
-    presencasMes = await fetchGAS("presencasMes");
+    presencasTotal = await fetchGAS("presencasTotal");
   } catch {
-    console.warn("Falha ao buscar presenças do mês");
+    console.warn("Falha ao buscar presenças totais");
   }
 
   filteredMembers.forEach((m, i) => {
-    const nome = m.Nome || "—";
-    const count = presencasMes[nome] || 0;
+    const nome  = m.Nome || "—";
+    const count = presencasTotal[nome] || 0;
 
     // cria card
     const card = document.createElement("div");
@@ -138,8 +135,8 @@ async function renderCards() {
     card.innerHTML = `
       <h3 class="font-bold text-lg mb-1">${nome}</h3>
       <p class="text-sm text-green-700 mb-2">
-        <strong>Presenças no mês:</strong> 
-        <span class="presencas-mes">${count}</span>
+        <strong>Presenças totais:</strong>
+        <span class="presencas-total">${count}</span>
       </p>
       <p class="text-sm"><strong>Período:</strong> ${m.Periodo||"—"}</p>
       <p class="text-sm"><strong>Líder:</strong> ${m.Lider||"—"}</p>
@@ -148,7 +145,7 @@ async function renderCards() {
         <input type="checkbox" class="presence-checkbox"/>
         <span>Presente</span>
       </label>
-      <button class="btn-confirm-presence btn-confirm-presence mt-2 hidden">
+      <button class="btn-confirm-presence mt-2 hidden">
         Confirmar Presença
       </button>
       <p class="presence-info text-xs text-green-700 mt-1 hidden"></p>
@@ -159,7 +156,7 @@ async function renderCards() {
     const checkbox = card.querySelector(".presence-checkbox");
     const btn      = card.querySelector(".btn-confirm-presence");
     const info     = card.querySelector(".presence-info");
-    const countEl  = card.querySelector(".presencas-mes");
+    const countEl  = card.querySelector(".presencas-total");
 
     // exibe botão ao marcar checkbox
     checkbox.addEventListener("change", () => {
@@ -170,26 +167,19 @@ async function renderCards() {
     btn.addEventListener("click", async () => {
       const now = new Date();
       const [date, time] = now.toLocaleString("pt-BR").split(" ");
-      // feedback UI imediato
       info.textContent = `Marcado em ${date} ${time}`;
       info.classList.remove("hidden");
       checkbox.disabled = true;
       btn.classList.add("hidden");
 
-      // envia ao backend Node -> Apps Script
       try {
         await fetch(`${API_URL}/presenca`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome,
-            data: date,
-            hora: time,
-            sheet: "PRESENCAS"
-          })
+          body: JSON.stringify({ nome, data: date, hora: time, sheet: "PRESENCAS" })
         });
-        // re-fetch só para atualizar este contador
-        const updated = await fetchGAS("presencasMes");
+        // re-fetch para atualizar o contador total
+        const updated = await fetchGAS("presencasTotal");
         countEl.textContent = updated[nome] || count + 1;
         showMessage(`Presença de ${nome} registrada!`, "success");
       } catch (err) {

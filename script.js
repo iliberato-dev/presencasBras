@@ -218,6 +218,58 @@ dom.clearBtn.addEventListener("click", () => {
   dom.filterLid.addEventListener(evt, applyFilters);
   dom.filterGape.addEventListener(evt, applyFilters);
 });
+// =======================================================================
+// 1) CARREGA MEMBROS (GET getMembros c/ cache em sessionStorage)
+// =======================================================================
+async function loadMembers() {
+  dom.cards.innerHTML = `<p class="text-center py-8">Carregando membros…</p>`;
+  
+  // Tenta ler do cache
+  const cacheKey = 'membersCache';
+  let membros = null;
+  const cacheRaw = sessionStorage.getItem(cacheKey);
+  if (cacheRaw) {
+    try {
+      membros = JSON.parse(cacheRaw);
+      console.log('Usando membros do cache:', membros.length);
+    } catch {}
+  }
+
+  // Se não tiver no cache, busca do server
+  if (!membros) {
+    try {
+      const envelope = await fetchGAS("getMembros");
+      // envelope = { tipoRecebido:"getMembros", dados:{ membros:[…] } }
+      membros = envelope.dados?.membros || [];
+      // grava no cache
+      sessionStorage.setItem(cacheKey, JSON.stringify(membros));
+      console.log('Buscou do GAS e armazenou cache:', membros.length);
+      showMessage(`Carregados ${membros.length} membros do servidor`, "success");
+    } catch (err) {
+      console.error("Erro ao carregar membros:", err);
+      membros = [];  
+      showMessage("Erro ao carregar membros", "error");
+    }
+  } else {
+    showMessage(`Carregados ${membros.length} membros do cache`, "info");
+  }
+
+  allMembers = membros;
+  populateFilters();
+  applyFilters();
+}
+
+// =======================================================================
+// BOTÃO PARA LIMPAR O CACHE (caso queira forçar novo fetch)
+// =======================================================================
+const clearCacheBtn = document.createElement('button');
+clearCacheBtn.textContent = 'Recarregar do servidor';
+clearCacheBtn.className = 'btn-secondary-dark mb-4';
+clearCacheBtn.addEventListener('click', () => {
+  sessionStorage.removeItem('membersCache');
+  loadMembers();
+});
+dom.cards.parentNode.insertBefore(clearCacheBtn, dom.cards);
 
 // carrega tudo após DOM pronto
 window.addEventListener("DOMContentLoaded", loadMembers);

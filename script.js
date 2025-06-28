@@ -44,10 +44,11 @@ function showMessage(text, type = "info") {
 // UTIL: FETCH AO GAS (GET)
 // =======================================================================
 async function fetchGAS(tipo) {
-  const res = await fetch(`${GAS_URL}?tipo=${tipo}`);
+  const res = await fetch(`${API_URL}/presenca?tipo=${tipo}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+
 
 // =======================================================================
 // 1) CARREGA MEMBROS (GET getMembros)

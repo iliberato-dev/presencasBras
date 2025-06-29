@@ -364,7 +364,7 @@ async function updateDashboardSummary() {
 }
 
 /**
- * NOVO: Função para atualizar os campos Período, Líder e GAPE do dashboard
+ * Função para atualizar os campos Período, Líder e GAPE do dashboard
  * diretamente com base nos valores dos filtros.
  */
 function updateDashboardInfoFromFilters() {
@@ -435,7 +435,7 @@ function applyFiltersWithMessage() {
 }
 
 /**
- * NOVO: Alterna a visibilidade do contêiner do dashboard com animação.
+ * Alterna a visibilidade do contêiner do dashboard com animação.
  * Também alterna o texto e o ícone do botão de toggle.
  */
 function toggleDashboardVisibility() {
@@ -444,8 +444,8 @@ function toggleDashboardVisibility() {
         return;
     }
 
-    // Verifica se o dashboard está atualmente oculto (max-h-0 e opacity-0)
     const isHidden = dashboardContainer.classList.contains('max-h-0');
+    const transitionDuration = 700; // Corresponds to Tailwind's duration-700
 
     if (isHidden) {
         // MOSTRAR: Remove classes de ocultação e define max-height dinamicamente
@@ -454,24 +454,27 @@ function toggleDashboardVisibility() {
         dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`;
         dashboardContainer.style.opacity = '1';
         
+        // Após a transição, remover max-height para permitir que o conteúdo se ajuste naturalmente.
+        // Isso é importante se o conteúdo dentro do dashboard puder mudar de tamanho dinamicamente.
+        setTimeout(() => {
+            dashboardContainer.style.maxHeight = 'none';
+        }, transitionDuration); 
+        
         // Alterna icon e texto para "Fechar Resumo"
         dashboardOpenIcon.classList.add('hidden');
         dashboardCloseIcon.classList.remove('hidden');
         dashboardOpenText.classList.add('hidden');
         dashboardCloseText.classList.remove('hidden');
 
-        // Opcional: Se o conteúdo pode mudar de altura, após a transição completa,
-        // pode ser necessário remover o maxHeight para permitir que ele se ajuste.
-        // setTimeout(() => { dashboardContainer.style.maxHeight = 'none'; }, 700); 
-
     } else {
         // ESCONDER: Define max-height atual para permitir transição, depois oculta
         dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`; // Garante que a altura inicial é lida corretamente
+        // Pequeno atraso para garantir que a transição de max-height seja aplicada antes de mudar para 0.
         setTimeout(() => {
             dashboardContainer.style.maxHeight = '0';
             dashboardContainer.style.opacity = '0';
             dashboardContainer.classList.add('max-h-0'); // Re-adiciona para estado oculto definitivo
-        }, 10); // Pequeno atraso para garantir que a transição de max-height seja aplicada
+        }, 10); 
 
         // Alterna icon e texto para "Ver Resumo"
         dashboardOpenIcon.classList.remove('hidden');
@@ -497,7 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (filterLiderInput) filterLiderInput.addEventListener("change", applyFilters);
     if (filterGapeInput) filterGapeInput.addEventListener("change", applyFilters);
 
-    // NOVO: Event listener para o botão de toggle do dashboard
+    // Event listener para o botão de toggle do dashboard
     if (toggleDashboardBtn) {
         toggleDashboardBtn.addEventListener("click", toggleDashboardVisibility);
     } else {

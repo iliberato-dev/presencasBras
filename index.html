@@ -59,8 +59,9 @@
             <button id="clearFiltersBtn" class="btn-secondary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md">Limpar Filtros</button>
         </div>
 
-        <div id="globalLoadingIndicator" class="col-span-full text-center py-8">
-        <!-- O spinner de carregamento aparecerá aqui -->
+        <!-- NOVO: Loading indicator com position fixed e centralizado -->
+        <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50 hidden">
+            <!-- O spinner de carregamento aparecerá aqui -->
         </div>
 
         <div id="messageArea" class="message-box hidden" role="alert"></div>

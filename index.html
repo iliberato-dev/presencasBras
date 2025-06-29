@@ -64,10 +64,22 @@
         <!-- Botão para alternar a visibilidade do Dashboard -->
         <div class="flex justify-center mb-4">
             <button id="toggleDashboardBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path>
-                </svg>
-                <span class="ml-2">Ver Resumo</span>
+                <!-- Ícone para "Ver Resumo" (documento) -->
+                <span id="dashboardOpenIcon" class="flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path>
+                    </svg>
+                </span>
+                <!-- Ícone para "Fechar Resumo" (seta para cima/colapsar) - Inicialmente oculto -->
+                <span id="dashboardCloseIcon" class="hidden flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                    </svg>
+                </span>
+                <!-- Texto para "Ver Resumo" -->
+                <span id="dashboardOpenText" class="ml-2">Ver Resumo</span>
+                <!-- Texto para "Fechar Resumo" - Inicialmente oculto -->
+                <span id="dashboardCloseText" class="ml-2 hidden">Fechar Resumo</span>
             </button>
         </div>
 

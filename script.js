@@ -143,6 +143,18 @@ function applyFilters() {
         return matchesName && matchesPeriodo && matchesLider && matchesGape;
     });
 
+    // NOVO: Atualizar Período, Líder e GAPE no dashboard com base nos filtros selecionados
+    if (dashboardPeriodoEl) {
+        dashboardPeriodoEl.textContent = periodoFilter === "" ? "Todos" : filterPeriodoSelect.value;
+    }
+    if (dashboardLiderEl) {
+        dashboardLiderEl.textContent = liderFilter === "" ? "Todos" : filterLiderInput.value;
+    }
+    if (dashboardGapeEl) {
+        dashboardGapeEl.textContent = gapeFilter === "" ? "Todos" : filterGapeInput.value;
+    }
+
+
     // Chama a função para exibir os membros filtrados.
     displayMembers(filteredMembers);
 }
@@ -162,7 +174,7 @@ async function displayMembers(members) {
     // Busca as contagens de presença totais para cada membro para exibir nos cards.
     const presencasTotaisPorMembro = await getPresencasTotal(); 
 
-    // NOVO: Calcular total de presenças dos membros filtrados para o Dashboard
+    // Calcular total de presenças dos membros filtrados para o Dashboard
     let totalFilteredPresences = 0;
     members.forEach(member => {
         const memberNameKey = (member.Nome || "").trim();
@@ -259,7 +271,9 @@ async function displayMembers(members) {
                 const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
                 card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
 
-                await updateDashboardSummary(); // Atualiza o resumo do dashboard (Líder, GAPE, Período, etc.)
+                // A parte de 'Presenças no Mês' no dashboard já é atualizada em displayMembers
+                // Re-calcula e atualiza os campos Período, Líder e GAPE do dashboard após o evento
+                await updateDashboardInfoFromFilters(); // Chama a nova função para atualizar dashboard com filtros
             } catch (e) {
                 console.error("Falha ao enviar presença para o servidor:", e);
                 showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
@@ -295,12 +309,14 @@ async function getPresencasTotal() {
 }
 
 /**
- * Função para obter e atualizar os dados do card de resumo do dashboard.
- * Esta função agora foca apenas em Período, Líder e GAPE, pois as Presenças Totais
- * no Mês são calculadas no frontend com base nos filtros.
- * @returns {Promise<Object>} Um objeto com o total de presenças do mês, período, líder e GAPE.
+ * Função para obter e atualizar os dados do card de resumo do dashboard (Período, Líder, GAPE).
+ * Esta função NÃO BUSCA DADOS DE PRESENÇA TOTAL, que agora é calculada no frontend.
+ * @returns {Promise<Object>} Um objeto com os dados básicos do dashboard (período, líder, GAPE).
  */
 async function updateDashboardSummary() { 
+    // Esta função foi renomeada para ser mais clara.
+    // Ela busca os dados gerais do dashboard que não dependem diretamente dos filtros (ex: do mês).
+    // O Apps Script 'presencasMes' retorna esses dados para o dashboard.
     const url = `${BACKEND_URL}/get-presencas-mes`; 
     try {
         const res = await fetch(url);
@@ -309,19 +325,35 @@ async function updateDashboardSummary() {
         }
         const data = await res.json();
         
-        // Atualiza os elementos HTML do card de resumo (apenas Período, Líder e GAPE).
-        // dashboardPresencasMesEl será atualizado separadamente em displayMembers.
-        if (dashboardPeriodoEl) dashboardPeriodoEl.textContent = data.periodo || "N/A";
-        if (dashboardLiderEl) dashboardLiderEl.textContent = data.lider || "N/A";
-        if (dashboardGapeEl) dashboardGapeEl.textContent = data.gape || "N/A";
-
+        // Retorna os dados para quem chamou (se necessário).
         return data; 
     } catch (error) {
         console.error("Erro em updateDashboardSummary:", error);
         showMessage("Erro ao carregar resumo do dashboard.", "error");
-        return { presencasMes: 0, periodo: "N/A", lider: "N/A", gape: "N/A" };
+        return { periodo: "N/A", lider: "N/A", gape: "N/A" };
     }
 }
+
+/**
+ * NOVO: Função para atualizar os campos Período, Líder e GAPE do dashboard
+ * diretamente com base nos valores dos filtros.
+ */
+function updateDashboardInfoFromFilters() {
+    const periodoFilterValue = filterPeriodoSelect ? filterPeriodoSelect.value : "";
+    const liderFilterValue = filterLiderInput ? filterLiderInput.value : "";
+    const gapeFilterValue = filterGapeInput ? filterGapeInput.value : "";
+
+    if (dashboardPeriodoEl) {
+        dashboardPeriodoEl.textContent = periodoFilterValue === "" ? "Todos" : periodoFilterValue;
+    }
+    if (dashboardLiderEl) {
+        dashboardLiderEl.textContent = liderFilterValue === "" ? "Todos" : liderFilterValue;
+    }
+    if (dashboardGapeEl) {
+        dashboardGapeEl.textContent = gapeFilterValue === "" ? "Todos" : gapeFilterValue;
+    }
+}
+
 
 /**
  * Preenche dinamicamente as opções dos selects de filtros (Líder e GAPE)
@@ -360,7 +392,7 @@ function clearFilters() {
     if (filterPeriodoSelect) filterPeriodoSelect.value = "";
     if (filterLiderInput) filterLiderInput.value = "";
     if (filterGapeInput) filterGapeInput.value = "";
-    applyFilters();
+    applyFilters(); // Reaplicar filtros para resetar o dashboard também
 }
 
 /**
@@ -398,13 +430,14 @@ document.addEventListener("DOMContentLoaded", () => {
             // 2. Preenche as opções dos selects de filtro com base nos dados carregados.
             fillSelectOptions();
             
-            // 3. Aplica os filtros (isso resultará na chamada de displayMembers).
-            // displayMembers é async e também chamará getPresencasTotal()
+            // 3. Aplica os filtros (isso resultará na chamada de displayMembers e atualização de presenças filtradas).
             applyFilters(); 
             
-            // 4. Atualiza o card de resumo do dashboard (Período, Líder, GAPE).
-            // A parte de 'Presenças no Mês' será atualizada dentro de displayMembers.
-            await updateDashboardSummary(); 
+            // 4. Atualiza o card de resumo do dashboard (Período, Líder, GAPE) com base NOS FILTROS.
+            // Esta chamada AGORA reflete os valores selecionados nos filtros, e não de células fixas.
+            // updateDashboardInfoFromFilters() é chamada dentro de applyFilters() para manter sincronia
+            // mas também é bom chamar aqui na inicialização para garantir que os valores iniciais (Todos) sejam setados.
+            updateDashboardInfoFromFilters();
 
             // Exibe uma mensagem de sucesso ou informação sobre a quantidade de membros.
             if (allMembersData.length > 0) {

@@ -26,7 +26,11 @@ const messageArea = document.getElementById("messageArea");
 const dashboardPresencasMesEl = document.getElementById("dashboardPresencasMes");
 const dashboardPeriodoEl = document.getElementById("dashboardPeriodo");
 const dashboardLiderEl = document.getElementById("dashboardLider");
-const dashboardGapeEl = document.getElementById("dashboardGape");
+const dashboardGapeEl = document = document.getElementById("dashboardGape");
+
+// NOVO: Elemento para o indicador de carregamento global
+const globalLoadingIndicator = document.getElementById("globalLoadingIndicator");
+
 
 // ------------------------------------------------------
 // VARIÁVEIS DE ESTADO
@@ -72,27 +76,49 @@ function showMessage(message, type = "info") {
 }
 
 /**
+ * Exibe ou esconde o indicador de carregamento global.
+ * @param {boolean} show True para mostrar, false para esconder.
+ * @param {string} message Mensagem opcional para exibir no spinner.
+ */
+function toggleGlobalLoading(show, message = "Carregando dados...") {
+    if (!globalLoadingIndicator) {
+        console.warn("Elemento globalLoadingIndicator não encontrado no HTML.");
+        return;
+    }
+    if (show) {
+        globalLoadingIndicator.innerHTML = `
+            <div class="flex flex-col justify-center items-center py-8 gap-3">
+                <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span class="text-blue-700 text-lg font-semibold animate-pulse">${message}</span>
+            </div>
+        `;
+        globalLoadingIndicator.classList.remove("hidden");
+    } else {
+        globalLoadingIndicator.innerHTML = "";
+        globalLoadingIndicator.classList.add("hidden");
+    }
+}
+
+
+/**
  * Carrega os dados de todos os membros do backend.
  * Atualiza o estado global 'allMembersData' e as opções dos filtros.
  * @returns {Promise<Array>} Um array de objetos de membros.
  */
 async function fetchMembers() {
-    // Exibe um spinner de carregamento no contêiner dos cards.
     if (!membersCardsContainer) {
         console.error("Erro: Elemento membersCardsContainer não encontrado no HTML ao buscar membros.");
         showMessage("Erro interno: contêiner de membros não encontrado.", "error");
         return []; // Retorna array vazio para evitar erros subsequentes.
     }
-    membersCardsContainer.innerHTML = `
-        <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
-            <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-            <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
-        </div>
-    `;
-    showMessage("Carregando dados dos membros...");
+
+    // NOVO: Ativa o indicador de carregamento global
+    toggleGlobalLoading(true, "Carregando dados dos membros...");
+    membersCardsContainer.innerHTML = ''; // Limpa os cards antigos enquanto carrega
+
 
     try {
         // Faz a requisição GET para o endpoint de membros no backend.
@@ -110,6 +136,9 @@ async function fetchMembers() {
         showMessage(`Erro ao carregar membros: ${error.message}`, "error");
         membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
         return []; // Retorna um array vazio em caso de erro.
+    } finally {
+        // NOVO: Desativa o indicador de carregamento global quando a busca terminar (sucesso ou erro)
+        toggleGlobalLoading(false);
     }
 }
 
@@ -143,17 +172,8 @@ function applyFilters() {
         return matchesName && matchesPeriodo && matchesLider && matchesGape;
     });
 
-    // NOVO: Atualizar Período, Líder e GAPE no dashboard com base nos filtros selecionados
-    if (dashboardPeriodoEl) {
-        dashboardPeriodoEl.textContent = periodoFilter === "" ? "Todos" : filterPeriodoSelect.value;
-    }
-    if (dashboardLiderEl) {
-        dashboardLiderEl.textContent = liderFilter === "" ? "Todos" : filterLiderInput.value;
-    }
-    if (dashboardGapeEl) {
-        dashboardGapeEl.textContent = gapeFilter === "" ? "Todos" : filterGapeInput.value;
-    }
-
+    // Atualizar Período, Líder e GAPE no dashboard com base nos filtros selecionados
+    updateDashboardInfoFromFilters();
 
     // Chama a função para exibir os membros filtrados.
     displayMembers(filteredMembers);
@@ -273,7 +293,7 @@ async function displayMembers(members) {
 
                 // A parte de 'Presenças no Mês' no dashboard já é atualizada em displayMembers
                 // Re-calcula e atualiza os campos Período, Líder e GAPE do dashboard após o evento
-                await updateDashboardInfoFromFilters(); // Chama a nova função para atualizar dashboard com filtros
+                updateDashboardInfoFromFilters(); // Chama a função para atualizar dashboard com filtros
             } catch (e) {
                 console.error("Falha ao enviar presença para o servidor:", e);
                 showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
@@ -330,7 +350,8 @@ async function updateDashboardSummary() {
     } catch (error) {
         console.error("Erro em updateDashboardSummary:", error);
         showMessage("Erro ao carregar resumo do dashboard.", "error");
-        return { periodo: "N/A", lider: "N/A", gape: "N/A" };
+        // Retorna um objeto com valores padrão em caso de erro, garantindo a estrutura esperada.
+        return { presencasMes: 0, periodo: "N/A", lider: "N/A", gape: "N/A" }; 
     }
 }
 
@@ -339,10 +360,12 @@ async function updateDashboardSummary() {
  * diretamente com base nos valores dos filtros.
  */
 function updateDashboardInfoFromFilters() {
+    // Captura os valores dos filtros. Se o elemento não existe, usa string vazia.
     const periodoFilterValue = filterPeriodoSelect ? filterPeriodoSelect.value : "";
     const liderFilterValue = filterLiderInput ? filterLiderInput.value : "";
     const gapeFilterValue = filterGapeInput ? filterGapeInput.value : "";
 
+    // Atualiza o texto dos elementos do dashboard. Se o valor do filtro for vazio, exibe "Todos".
     if (dashboardPeriodoEl) {
         dashboardPeriodoEl.textContent = periodoFilterValue === "" ? "Todos" : periodoFilterValue;
     }

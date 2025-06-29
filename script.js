@@ -103,6 +103,7 @@ async function fetchMembers() {
         }
         const data = await response.json(); // Converte a resposta para JSON.
         // O backend deve retornar um objeto com a propriedade 'membros'.
+        console.log("fetchMembers: Dados de membros recebidos do backend:", data.membros); // NOVO LOG
         return data.membros || []; 
     } catch (error) {
         console.error("Erro ao carregar membros:", error);
@@ -316,8 +317,13 @@ async function updateDashboardSummary() {
 function fillSelectOptions() {
     // Extrai líderes únicos e os ordena.
     const lideres = [...new Set(allMembersData.map((m) => m.Lider).filter(Boolean))].sort();
+    // NOVO LOG: Verifique quais líderes foram extraídos
+    console.log("fillSelectOptions: Líderes únicos extraídos:", lideres); 
+    
     // Extrai GAPEs únicos e os ordena.
     const gapes = [...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean))].sort();
+    // NOVO LOG: Verifique quais GAPEs foram extraídos
+    console.log("fillSelectOptions: GAPEs únicos extraídos:", gapes); 
 
     // Popula o select de Líder.
     if (filterLiderInput) {

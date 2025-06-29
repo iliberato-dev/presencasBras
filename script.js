@@ -1,20 +1,9 @@
-/**
- * script.js - Lógica de frontend para o controle de presença.
- * Este script se comunica com o backend no Render, que por sua vez,
- * atua como proxy para o Google Apps Script.
- */
+// Dados brutos dos membros (simulado, seriam obtidos do Apps Script)
+let allMembersData = [];
+// Membros atualmente exibidos após a aplicação dos filtros
+let filteredMembers = [];
 
-// ------------------------------------------------------
-// CONFIGURAÇÃO GLOBAL
-// ------------------------------------------------------
-// URL base do seu serviço de backend hospedado no Render.
-// O frontend fará requisições para este URL.
-const BACKEND_URL = "https://presencasbras.onrender.com"; 
-
-// ------------------------------------------------------
-// ELEMENTOS DO DOM
-// Captura referências aos elementos HTML da página.
-// ------------------------------------------------------
+// Elementos do DOM
 const filterNameInput = document.getElementById("filterName");
 const filterPeriodoSelect = document.getElementById("filterPeriodo");
 const filterLiderInput = document.getElementById("filterLider");
@@ -23,524 +12,476 @@ const applyFiltersBtn = document.getElementById("applyFiltersBtn");
 const membersCardsContainer = document.getElementById("membersCardsContainer");
 const messageArea = document.getElementById("messageArea");
 
-// Elementos do Dashboard
-const dashboardPresencasMesEl = document.getElementById("dashboardPresencasMes");
-const dashboardPeriodoEl = document.getElementById("dashboardPeriodo");
-const dashboardLiderEl = document.getElementById("dashboardLider");
-const dashboardGapeEl = document.getElementById("dashboardGape"); 
-
-// NOVOS ELEMENTOS para o toggle e container do dashboard
-const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
-const dashboardContainer = document.getElementById("dashboardContainer");
-const actualDashboardSummary = document.getElementById("actualDashboardSummary"); // O conteúdo interno do dashboard
-
-// NOVOS ELEMENTOS: Para o toggle de ícone e texto do botão
-const dashboardOpenIcon = document.getElementById("dashboardOpenIcon");
-const dashboardCloseIcon = document.getElementById("dashboardCloseIcon");
-const dashboardOpenText = document.getElementById("dashboardOpenText");
-const dashboardCloseText = document.getElementById("dashboardCloseText");
-
-
-// ------------------------------------------------------
-// VARIÁVEIS DE ESTADO
-// Armazenam os dados dos membros e o resultado dos filtros.
-// ------------------------------------------------------
-let allMembersData = []; // Todos os dados dos membros carregados
-let filteredMembers = []; // Membros após a aplicação dos filtros
-
 /**
- * Exibe uma mensagem de status para o usuário em uma área designada.
- * @param {string} message A mensagem a ser exibida.
- * @param {'info'|'success'|'error'|'warning'} type O tipo da mensagem para estilização.
+ * Exibe uma mensagem de status para o usuário.
+ * @param {string} message - A mensagem a ser exibida.
+ * @param {'success'|'error'|'info'} type - O tipo de mensagem (para estilização).
  */
 function showMessage(message, type = "info") {
-    // Verifica se o elemento da área de mensagem existe no DOM.
-    if (!messageArea) { 
-        console.warn("Elemento messageArea não encontrado no HTML. Mensagem: " + message);
-        return;
-    }
-    // Evita exibir mensagens de carregamento repetidas que o spinner já indica.
-    if (message === "Carregando dados dos membros...") return;
+  // Não mostrar mensagem de carregando membros aqui para evitar duplicidade
+  if (message === "Carregando dados dos membros...") return;
+  messageArea.textContent = message;
+  messageArea.className = "message-box show"; // Adiciona animação
+  messageArea.classList.remove("hidden");
 
-    messageArea.textContent = message;
-    messageArea.className = "message-box show"; // Estilo base para exibir a caixa
-    messageArea.classList.remove("hidden"); // Garante que a caixa está visível
-
-    // Adiciona classes de estilização com base no tipo da mensagem.
-    if (type === "success") {
-        messageArea.classList.add("message-success");
-    } else if (type === "error") {
-        messageArea.classList.add("message-error");
-    } else if (type === "warning") {
-        messageArea.classList.add("bg-yellow-100", "text-yellow-800"); // Exemplo de estilo para warning
-    } else {
-        messageArea.classList.add("bg-blue-100", "text-blue-800"); // Estilo padrão 'info'
-    }
-
-    // Esconde a mensagem após 5 segundos.
-    setTimeout(() => {
-        messageArea.classList.remove("show"); // Inicia transição para esconder
-        setTimeout(() => messageArea.classList.add("hidden"), 500); // Esconde completamente após a transição
-    }, 5000);
+  if (type === "success") {
+    messageArea.classList.add("message-success");
+  } else if (type === "error") {
+    messageArea.classList.add("message-error");
+  } else {
+    messageArea.classList.add("bg-blue-100", "text-blue-800");
+  }
+  setTimeout(() => {
+    messageArea.classList.remove("show");
+    setTimeout(() => messageArea.classList.add("hidden"), 500);
+  }, 5000);
 }
 
 /**
- * Exibe ou esconde o indicador de carregamento global.
- * @param {boolean} show True para mostrar, false para esconder.
- * @param {string} message Mensagem opcional para exibir no spinner.
- */
-function toggleGlobalLoading(show, message = "Carregando dados...") {
-    if (!globalLoadingIndicator) {
-        console.warn("Elemento globalLoadingIndicator não encontrado no HTML.");
-        return;
-    }
-    if (show) {
-        globalLoadingIndicator.innerHTML = `
-            <div class="flex flex-col justify-center items-center py-8 gap-3">
-                <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                <span class="text-blue-700 text-lg font-semibold animate-pulse">${message}</span>
-            </div>
-        `;
-        globalLoadingIndicator.classList.remove("hidden");
-    } else {
-        globalLoadingIndicator.innerHTML = "";
-        globalLoadingIndicator.classList.add("hidden");
-    }
-}
-
-
-/**
- * Carrega os dados de todos os membros do backend.
- * Atualiza o estado global 'allMembersData' e as opções dos filtros.
- * @returns {Promise<Array>} Um array de objetos de membros.
+ * Carrega os dados dos membros.
+ * No ambiente real, esta função faria uma requisição ao seu Apps Script implantado.
  */
 async function fetchMembers() {
-    if (!membersCardsContainer) {
-        console.error("Erro: Elemento membersCardsContainer não encontrado no HTML ao buscar membros.");
-        showMessage("Erro interno: contêiner de membros não encontrado.", "error");
-        return []; // Retorna array vazio para evitar erros subsequentes.
+  // Mostra apenas o loading visual nos cards, sem mensagem duplicada
+  membersCardsContainer.innerHTML = `
+                <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
+                    <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
+                </div>
+            `;
+
+  try {
+    // --- ATENÇÃO: Substitua a URL abaixo pela URL de implantação do seu Apps Script ---
+    const appsScriptUrl =
+      "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLh6Ji04QgkX6sMQVSgqxEG4V6K9Dr9p--hBqGxVz2t0G0vZYfeBFhPXSZuPu_F5hNOAmaLdb1pEh5Y0EkkqmjhlfcSzEruKe4uRk0jxpHOMUhjpYjVqfQ3fTfmePTaLlG3o8mMCjfnpNLDFHkPldCB2o8WBzRJSN2h3v1Hqm4cfVvGWDbJT_4fUsFzS4Ck7UrkVEMqGHpd1VzMXtIzb2Q10bJ_f2hmIXCsEJYMUv9x65Nvh6ohqlbHBziq8c6vqyAj4h3osJkQib8EzDPYDkDLh5Mt-Ug&lib=MNOzUMDSZklwVXJnUkxjSACUCrVfXa6eb";
+
+    let data;
+    if (appsScriptUrl) {
+      const response = await fetch(appsScriptUrl);
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+      data = await response.json();
+      allMembersData = data.membros || data.data || [];
+      fillSelectOptions(); // Preenche selects após carregar dados
+      if (allMembersData.length === 0) {
+        showMessage("Nenhum membro encontrado ou dados vazios.", "info");
+      } else {
+        showMessage(
+          `Membros carregados com sucesso! Total: ${allMembersData.length}`,
+          "success"
+        );
+      }
+    } else {
+      allMembersData = [
+        {
+          Nome: "João Silva",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Manhã",
+          RI: "1234",
+          Congregacao: "Sede",
+          Lider: "Líder A",
+          GAPE: "001 - Betel",
+        },
+        {
+          Nome: "Maria Oliveira",
+          Status: "Ativo",
+          Cargo: "Diácono",
+          Periodo: "Noite",
+          RI: "5678",
+          Congregacao: "Sede",
+          Lider: "Líder B",
+          GAPE: "002 - Canaã",
+        },
+        {
+          Nome: "Pedro Souza",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Tarde",
+          RI: "9012",
+          Congregacao: "Sede",
+          Lider: "Líder A",
+          GAPE: "001 - Betel",
+        },
+        {
+          Nome: "Ana Costa",
+          Status: "Aguardando",
+          Cargo: "Membro",
+          Periodo: "Manhã",
+          RI: "3456",
+          Congregacao: "Congregação X",
+          Lider: "Líder C",
+          GAPE: "003 - Gideão",
+        },
+        {
+          Nome: "Lucas Pereira",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Noite",
+          RI: "7890",
+          Congregacao: "Sede",
+          Lider: "Líder B",
+          GAPE: "002 - Canaã",
+        },
+        {
+          Nome: "Sara Martins",
+          Status: "Ativo",
+          Cargo: "Evangelista",
+          Periodo: "Manhã",
+          RI: "1122",
+          Congregacao: "Sede",
+          Lider: "Líder C",
+          GAPE: "003 - Gideão",
+        },
+      ];
+      fillSelectOptions(); // Preenche selects após carregar dados mockados
+      showMessage("Dados mockados carregados para demonstração.", "info");
     }
 
-    // Ativa o indicador de carregamento global
-    toggleGlobalLoading(true, "Carregando dados dos membros...");
-    membersCardsContainer.innerHTML = ''; // Limpa os cards antigos enquanto carrega
-
-
-    try {
-        // Faz a requisição GET para o endpoint de membros no backend.
-        const response = await fetch(`${BACKEND_URL}/get-membros`); 
-        if (!response.ok) {
-            // Se a resposta não for bem-sucedida (status 2xx), lança um erro.
-            throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
-        }
-        const data = await response.json(); // Converte a resposta para JSON.
-        // O backend deve retornar um objeto com a propriedade 'membros'.
-        console.log("fetchMembers: Dados de membros recebidos do backend:", data.membros); 
-        return data.membros || []; 
-    } catch (error) {
-        console.error("Erro ao carregar membros:", error);
-        showMessage(`Erro ao carregar membros: ${error.message}`, "error");
-        membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
-        return []; // Retorna um array vazio em caso de erro.
-    } finally {
-        // Desativa o indicador de carregamento global quando a busca terminar (sucesso ou erro)
-        toggleGlobalLoading(false);
-    }
+    applyFilters(); // Aplica os filtros iniciais (todos os membros)
+  } catch (error) {
+    console.error("Erro ao carregar membros:", error);
+    showMessage(`Erro ao carregar membros: ${error.message}`, "error");
+    membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
+  }
 }
 
 /**
- * Aplica os filtros atuais aos dados de todos os membros e atualiza a exibição.
- * Esta função é chamada sempre que um filtro é alterado.
+ * Aplica os filtros aos dados dos membros e atualiza a tabela.
  */
 function applyFilters() {
-    // Captura os valores dos campos de filtro, tratando casos onde o elemento pode não existir.
-    const nameFilter = filterNameInput ? filterNameInput.value.toLowerCase().trim() : "";
-    const periodoFilter = filterPeriodoSelect ? filterPeriodoSelect.value.toLowerCase().trim() : "";
-    const liderFilter = filterLiderInput ? filterLiderInput.value.toLowerCase().trim() : "";
-    const gapeFilter = filterGapeInput ? filterGapeInput.value.toLowerCase().trim() : "";
+  const nameFilter = filterNameInput.value.toLowerCase().trim();
+  const periodoFilter = filterPeriodoSelect.value.toLowerCase().trim();
+  const liderFilter = filterLiderInput.value.toLowerCase().trim();
+  const gapeFilter = filterGapeInput.value.toLowerCase().trim();
 
-    // Filtra 'allMembersData' com base nos valores dos filtros.
-    filteredMembers = allMembersData.filter((member) => {
-        // Converte os valores do membro para minúsculas para comparação case-insensitive.
-        const memberName = String(member.Nome || "").toLowerCase();
-        const memberPeriodo = String(member.Periodo || "").toLowerCase();
-        const memberLider = String(member.Lider || "").toLowerCase();
-        const memberGape = String(member.GAPE || "").toLowerCase();
+  filteredMembers = allMembersData.filter((member) => {
+    const memberName = String(member.Nome || "").toLowerCase();
+    const memberPeriodo = String(member.Periodo || "").toLowerCase();
+    const memberLider = String(member.Lider || "").toLowerCase();
+    const memberGape = String(member.GAPE || "").toLowerCase();
 
-        // Verifica se o membro corresponde a cada filtro.
-        const matchesName = nameFilter === "" || memberName.includes(nameFilter);
-        const matchesPeriodo =
-            periodoFilter === "" || memberPeriodo.includes(periodoFilter);
-        const matchesLider =
-            liderFilter === "" || memberLider.includes(liderFilter);
-        const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
+    // Aplica todos os filtros cumulativamente
+    const matchesName = nameFilter === "" || memberName.includes(nameFilter);
+    const matchesPeriodo =
+      periodoFilter === "" || memberPeriodo.includes(periodoFilter);
+    const matchesLider =
+      liderFilter === "" || memberLider.includes(liderFilter);
+    const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
 
-        return matchesName && matchesPeriodo && matchesLider && matchesGape;
-    });
+    return matchesName && matchesPeriodo && matchesLider && matchesGape;
+  });
 
-    // Atualizar Período, Líder e GAPE no dashboard com base nos filtros selecionados
-    updateDashboardInfoFromFilters();
-
-    // Chama a função para exibir os membros filtrados.
-    displayMembers(filteredMembers);
+  displayMembers(filteredMembers);
 }
 
 /**
- * Exibe os membros na tela como cards individuais, incluindo um checkbox de presença.
- * @param {Array<Object>} members Array de objetos de membros a serem exibidos.
+ * Exibe os membros na tela como cards, cada um com seu checkbox de presença.
+ * Agora, ao marcar o checkbox, registra a presença com data e hora.
  */
-async function displayMembers(members) {
-    const container = document.getElementById("membersCardsContainer");
-    if (!container) {
-        console.error("Erro: Elemento membersCardsContainer não encontrado no HTML para displayMembers.");
-        return;
-    }
-    container.innerHTML = ""; // Limpa o conteúdo atual do contêiner.
+function displayMembers(members) {
+  const container = document.getElementById("membersCardsContainer");
+  container.classList.remove("hidden");
+  container.innerHTML = "";
 
-    // Busca as contagens de presença totais para cada membro para exibir nos cards.
-    const presencasTotaisPorMembro = await getPresencasTotal(); 
+  if (members.length === 0) {
+    container.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">Nenhum membro encontrado com os filtros aplicados.</div>`;
+    return;
+  }
 
-    // Calcular total de presenças dos membros filtrados para o Dashboard
-    let totalFilteredPresences = 0;
-    members.forEach(member => {
-        const memberNameKey = (member.Nome || "").trim();
-        totalFilteredPresences += (presencasTotaisPorMembro[memberNameKey] || 0);
+  members.forEach((member, idx) => {
+    const card = document.createElement("div");
+    card.className =
+      "fade-in-row bg-white rounded-xl shadow-md p-4 flex flex-col gap-2 relative";
+    card.style.animationDelay = `${idx * 0.04}s`;
+    card.innerHTML = `
+                    <div class="font-bold text-lg text-gray-800">${
+                      member.Nome || "N/A"
+                    }</div>
+                    <div class="text-sm text-gray-600"><b>Período:</b> ${
+                      member.Periodo || "N/A"
+                    }</div>
+                    <div class="text-sm text-gray-600"><b>Líder:</b> ${
+                      member.Lider || "N/A"
+                    }</div>
+                    <div class="text-sm text-gray-600"><b>GAPE:</b> ${
+                      member.GAPE || "N/A"
+                    }</div>
+                    <label class="flex items-center gap-2 mt-2">
+                        <input type="checkbox" class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 presence-checkbox" data-member-name="${
+                          member.Nome
+                        }">
+                        <span class="text-sm text-gray-700">Presente</span>
+                    </label>
+                    <button class="btn-confirm-presence w-full mt-2 hidden confirm-presence-btn">Confirmar Presença</button>
+                    <div class="text-xs text-green-700 mt-1 hidden presence-info"></div>
+                `;
+    container.appendChild(card);
+
+    // Adiciona evento para marcar presença individual
+    const checkbox = card.querySelector(".presence-checkbox");
+    const infoDiv = card.querySelector(".presence-info");
+    const confirmBtn = card.querySelector(".confirm-presence-btn");
+    checkbox.addEventListener("change", function () {
+      if (this.checked) {
+        confirmBtn.classList.remove("hidden");
+      } else {
+        confirmBtn.classList.add("hidden");
+        infoDiv.textContent = "";
+        infoDiv.classList.add("hidden");
+      }
     });
-    // Atualiza o dashboardPresencasMesEl com a soma das presenças dos membros filtrados
-    if (dashboardPresencasMesEl) {
-        dashboardPresencasMesEl.textContent = totalFilteredPresences;
-    }
+    confirmBtn.addEventListener("click", async function () {
+      const now = new Date();
+      const dia = String(now.getDate()).padStart(2, "0");
+      const mes = String(now.getMonth() + 1).padStart(2, "0");
+      const ano = now.getFullYear();
+      const hora = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const seg = String(now.getSeconds()).padStart(2, "0");
+      const dataHora = `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
+      infoDiv.textContent = `Presença marcada em ${dataHora}`;
+      infoDiv.classList.remove("hidden");
+      confirmBtn.classList.add("hidden");
+      checkbox.disabled = true;
+      try {
+        await fetch(
+          "http://localhost:3000/presenca",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nome: member.Nome,
+              data: `${dia}/${mes}/${ano}`,
+              hora: `${hora}:${min}:${seg}`,
+              sheet: "PRESENCAS",
+            }),
+          }
+        );
+      } catch (e) {
+        showMessage("Falha ao enviar presença para o servidor.", "error");
+      }
+    });
+  });
+}
 
+/**
+ * Simula a marcação de presença e envia os dados (seria para o Apps Script doPost).
+ */
+async function markAttendance() {
+  const checkedMembers = Array.from(
+    document.querySelectorAll(
+      '#membersTableBody input[type="checkbox"]:checked'
+    )
+  ).map((checkbox) => checkbox.dataset.memberName);
 
-    if (members.length === 0) {
-        // Exibe uma mensagem se nenhum membro for encontrado após os filtros.
-        container.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">Nenhum membro encontrado com os filtros aplicados.</div>`;
-        return;
-    }
+  if (checkedMembers.length === 0) {
+    showMessage("Nenhum membro selecionado para marcar presença.", "info");
+    return;
+  }
 
-    // Itera sobre os membros e cria um card HTML para cada um.
-    members.forEach((member, idx) => {
-        const memberNameKey = (member.Nome || "").trim();
-        const presencas = presencasTotaisPorMembro[memberNameKey] || 0; 
+  showMessage(
+    `Marcando presença para ${checkedMembers.length} membro(s)...`,
+    "info"
+  );
 
-        const card = document.createElement("div");
-        card.className = "fade-in-row bg-white rounded-xl shadow-md p-4 flex flex-col gap-2 relative";
-        card.style.animationDelay = `${idx * 0.04}s`; // Adiciona um pequeno atraso para animação em cascata.
-        card.innerHTML = `
-            <div class="font-bold text-lg text-gray-800">${member.Nome || "N/A"}</div>
-            <div class="text-sm text-green-700 font-bold"><b>Presenças totais:</b> <span class="presencas-mes">${presencas}</span></div>
-            <div class="text-sm text-gray-600"><b>Período:</b> ${member.Periodo || "N/A"}</div>
-            <div class="text-sm text-gray-600"><b>Líder:</b> ${member.Lider || "N/A"}</div>
-            <div class="text-sm text-gray-600"><b>GAPE:</b> ${member.GAPE || "N/A"}</div>
-            <label class="flex items-center gap-2 mt-2">
-                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 presence-checkbox" data-member-name="${member.Nome}">
-                <span class="text-sm text-gray-700">Presente</span>
-            </label>
-            <button class="btn-confirm-presence w-full mt-2 hidden confirm-presence-btn">Confirmar Presença</button>
-            <div class="text-xs text-green-700 mt-1 hidden presence-info"></div>
-        `;
-        container.appendChild(card);
-
-        // Adiciona event listeners para o checkbox e botão de confirmação de presença.
-        const checkbox = card.querySelector(".presence-checkbox");
-        const infoDiv = card.querySelector(".presence-info");
-        const confirmBtn = card.querySelector(".confirm-presence-btn");
-
-        checkbox.addEventListener("change", function () {
-            if (this.checked) {
-                confirmBtn.classList.remove("hidden");
-            } else {
-                confirmBtn.classList.add("hidden");
-                infoDiv.textContent = "";
-                infoDiv.classList.add("hidden");
-            }
+  // --- Lógica para enviar dados ao Apps Script (exemplo de doPost) ---
+  try {
+    // Você precisaria de uma função doPost no seu Apps Script para receber e processar esses dados.
+    // Exemplo de como você enviaria:
+    /*
+        const response = await fetch('SUA_URL_DO_APPS_SCRIPT_DOPOST_AQUI', {
+            method: 'POST',
+            mode: 'no-cors', // Pode ser necessário para evitar CORS issues em Apps Script simples
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: new Date().toISOString().split('T')[0], // Data atual
+                presentMembers: checkedMembers
+            }),
         });
+        // Note: Com 'no-cors', você não pode ler a resposta do servidor diretamente.
+        // Para feedback, o Apps Script teria que retornar um ContentService.createTextOutput.
+        */
 
-        confirmBtn.addEventListener("click", async function () {
-            const now = new Date();
-            const dia = String(now.getDate()).padStart(2, "0");
-            const mes = String(now.getMonth() + 1).padStart(2, "0");
-            const ano = now.getFullYear();
-            const hora = String(now.getHours()).padStart(2, "0");
-            const min = String(now.getMinutes()).padStart(2, "0");
-            const seg = String(now.getSeconds()).padStart(2, "0");
-            const dataHora = `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
-            
-            infoDiv.textContent = `Enviando presença...`;
-            infoDiv.classList.remove("hidden");
-            confirmBtn.disabled = true;
+    showMessage(
+      `Presença marcada com sucesso para ${checkedMembers.length} membro(s)! (Simulado)`,
+      "success"
+    );
 
-            try {
-                // Envia a requisição POST para registrar a presença no backend.
-                const response = await fetch(`${BACKEND_URL}/presenca`, { 
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        nome: member.Nome,
-                        data: `${dia}/${mes}/${ano}`,
-                        hora: `${hora}:${min}:${seg}`,
-                    }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json(); 
-                    throw new Error(`Erro ao registrar presença: ${response.status} - ${errorData.details || errorData.message || 'Erro desconhecido'}`);
-                }
-
-                infoDiv.textContent = `Presença marcada em ${dataHora}`;
-                infoDiv.classList.remove("hidden");
-                confirmBtn.classList.add("hidden");
-                checkbox.disabled = true;
-
-                // Atualiza as contagens de presença nos cards e no dashboard após registrar uma presença.
-                const updatedPresencesForMembers = await getPresencasTotal(); 
-                const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
-                card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
-
-                // Re-calcula e atualiza os campos Período, Líder e GAPE do dashboard após o evento
-                updateDashboardInfoFromFilters(); // Chama a função para atualizar dashboard com filtros
-            } catch (e) {
-                console.error("Falha ao enviar presença para o servidor:", e);
-                showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
-                infoDiv.textContent = `Erro ao marcar presença!`;
-                infoDiv.classList.remove("hidden");
-                checkbox.checked = false; 
-                confirmBtn.classList.add("hidden"); 
-                checkbox.disabled = false; 
-            } finally {
-                confirmBtn.disabled = false;
-            }
-        });
-    });
+    // Opcional: Limpar checkboxes após marcar presença
+    document
+      .querySelectorAll('#membersTableBody input[type="checkbox"]:checked')
+      .forEach((cb) => (cb.checked = false));
+  } catch (error) {
+    console.error("Erro ao marcar presença:", error);
+    showMessage(`Erro ao marcar presença: ${error.message}`, "error");
+  }
 }
 
-/**
- * Função para obter as contagens de presença totais por cada membro.
- * @returns {Promise<Object>} Um objeto onde as chaves são os nomes dos membros e os valores são as contagens.
- */
-async function getPresencasTotal() {
-    const url = `${BACKEND_URL}/get-presencas-total`; 
-    try {
-        const res = await fetch(url);
-        if (!res.ok) {
-            throw new Error(`Erro ao buscar presenças totais por membro: ${res.status}`);
-        }
-        return await res.json(); 
-    } catch (error) {
-        console.error("Erro em getPresencasTotal:", error);
-        showMessage("Erro ao carregar presenças totais para cards.", "error");
-        return {}; 
-    }
-}
-
-/**
- * Função para obter e atualizar os dados do card de resumo do dashboard (Período, Líder, GAPE).
- * Esta função NÃO BUSCA DADOS DE PRESENÇA TOTAL, que agora é calculada no frontend.
- * @returns {Promise<Object>} Um objeto com os dados básicos do dashboard (período, líder, GAPE).
- */
-async function updateDashboardSummary() { 
-    // Esta função foi renomeada para ser mais clara.
-    // Ela busca os dados gerais do dashboard que não dependem diretamente dos filtros (ex: do mês).
-    // O Apps Script 'presencasMes' retorna esses dados para o dashboard.
-    const url = `${BACKEND_URL}/get-presencas-mes`; 
-    try {
-        const res = await fetch(url);
-        if (!res.ok) {
-            throw new Error(`Erro ao buscar resumo do dashboard: ${res.status}`);
-        }
-        const data = await res.json();
-        
-        // Retorna os dados para quem chamou (se necessário).
-        return data; 
-    } catch (error) {
-        console.error("Erro em updateDashboardSummary:", error);
-        showMessage("Erro ao carregar resumo do dashboard.", "error");
-        // Retorna um objeto com valores padrão em caso de erro, garantindo a estrutura esperada.
-        return { presencasMes: 0, periodo: "N/A", lider: "N/A", gape: "N/A" }; 
-    }
-}
-
-/**
- * Função para atualizar os campos Período, Líder e GAPE do dashboard
- * diretamente com base nos valores dos filtros.
- */
-function updateDashboardInfoFromFilters() {
-    // Captura os valores dos filtros. Se o elemento não existe, usa string vazia.
-    const periodoFilterValue = filterPeriodoSelect ? filterPeriodoSelect.value : "";
-    const liderFilterValue = filterLiderInput ? filterLiderInput.value : "";
-    const gapeFilterValue = filterGapeInput ? filterGapeInput.value : "";
-
-    // Atualiza o texto dos elementos do dashboard. Se o valor do filtro for vazio, exibe "Todos".
-    if (dashboardPeriodoEl) {
-        dashboardPeriodoEl.textContent = periodoFilterValue === "" ? "Todos" : periodoFilterValue;
-    }
-    if (dashboardLiderEl) {
-        dashboardLiderEl.textContent = liderFilterValue === "" ? "Todos" : liderFilterValue;
-    }
-    if (dashboardGapeEl) {
-        dashboardGapeEl.textContent = gapeFilterValue === "" ? "Todos" : gapeFilterValue;
-    }
-}
-
-
-/**
- * Preenche dinamicamente as opções dos selects de filtros (Líder e GAPE)
- * com base nos dados dos membros carregados.
- */
+// Função para preencher selects de Líder e GAPE dinamicamente
 function fillSelectOptions() {
-    // Extrai líderes únicos e os ordena.
-    const lideres = [...new Set(allMembersData.map((m) => m.Lider).filter(Boolean))].sort();
-    console.log("fillSelectOptions: Líderes únicos extraídos:", lideres); 
-    
-    // Extrai GAPEs únicos e os ordena.
-    const gapes = [...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean))].sort();
-    console.log("fillSelectOptions: GAPEs únicos extraídos:", gapes); 
+  // Extrai valores únicos de Líder e GAPE dos dados
+  const lideres = [
+    ...new Set(allMembersData.map((m) => m.Lider).filter(Boolean)),
+  ].sort();
+  const gapes = [
+    ...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean)),
+  ].sort();
 
-    // Popula o select de Líder.
-    if (filterLiderInput) {
-        filterLiderInput.innerHTML = '<option value="">Todos</option>' + lideres.map((l) => `<option value="${l}">${l}</option>`).join("");
-    } else {
-        console.warn("Elemento filterLiderInput não encontrado.");
-    }
+  // Preenche o select de Líder
+  filterLiderInput.innerHTML =
+    '<option value="">Todos</option>' +
+    lideres.map((l) => `<option value="${l}">${l}</option>`).join("");
 
-    // Popula o select de GAPE.
-    if (filterGapeInput) {
-        filterGapeInput.innerHTML = '<option value="">Todos</option>' + gapes.map((g) => `<option value="${g}">${g}</option>`).join("");
-    } else {
-        console.warn("Elemento filterGapeInput não encontrado.");
-    }
+  // Preenche o select de GAPE
+  filterGapeInput.innerHTML =
+    '<option value="">Todos</option>' +
+    gapes.map((g) => `<option value="${g}">${g}</option>`).join("");
 }
 
-/**
- * Limpa todos os campos de filtro e reaplica os filtros, exibindo todos os membros novamente.
- */
+// Modifique fetchMembers para chamar fillSelectOptions após carregar os dados
+async function fetchMembers() {
+  // Mostra apenas o loading visual nos cards, sem mensagem duplicada
+  membersCardsContainer.innerHTML = `
+                <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
+                    <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
+                </div>
+            `;
+
+  try {
+    // --- ATENÇÃO: Substitua a URL abaixo pela URL de implantação do seu Apps Script ---
+    const appsScriptUrl =
+      "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLh6Ji04QgkX6sMQVSgqxEG4V6K9Dr9p--hBqGxVz2t0G0vZYfeBFhPXSZuPu_F5hNOAmaLdb1pEh5Y0EkkqmjhlfcSzEruKe4uRk0jxpHOMUhjpYjVqfQ3fTfmePTaLlG3o8mMCjfnpNLDFHkPldCB2o8WBzRJSN2h3v1Hqm4cfVvGWDbJT_4fUsFzS4Ck7UrkVEMqGHpd1VzMXtIzb2Q10bJ_f2hmIXCsEJYMUv9x65Nvh6ohqlbHBziq8c6vqyAj4h3osJkQib8EzDPYDkDLh5Mt-Ug&lib=MNOzUMDSZklwVXJnUkxjSACUCrVfXa6eb";
+
+    let data;
+    if (appsScriptUrl) {
+      const response = await fetch(appsScriptUrl);
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+      data = await response.json();
+      allMembersData = data.membros || data.data || [];
+      fillSelectOptions(); // Preenche selects após carregar dados
+      if (allMembersData.length === 0) {
+        showMessage("Nenhum membro encontrado ou dados vazios.", "info");
+      } else {
+        showMessage(
+          `Membros carregados com sucesso! Total: ${allMembersData.length}`,
+          "success"
+        );
+      }
+    } else {
+      allMembersData = [
+        {
+          Nome: "João Silva",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Manhã",
+          RI: "1234",
+          Congregacao: "Sede",
+          Lider: "Líder A",
+          GAPE: "001 - Betel",
+        },
+        {
+          Nome: "Maria Oliveira",
+          Status: "Ativo",
+          Cargo: "Diácono",
+          Periodo: "Noite",
+          RI: "5678",
+          Congregacao: "Sede",
+          Lider: "Líder B",
+          GAPE: "002 - Canaã",
+        },
+        {
+          Nome: "Pedro Souza",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Tarde",
+          RI: "9012",
+          Congregacao: "Sede",
+          Lider: "Líder A",
+          GAPE: "001 - Betel",
+        },
+        {
+          Nome: "Ana Costa",
+          Status: "Aguardando",
+          Cargo: "Membro",
+          Periodo: "Manhã",
+          RI: "3456",
+          Congregacao: "Congregação X",
+          Lider: "Líder C",
+          GAPE: "003 - Gideão",
+        },
+        {
+          Nome: "Lucas Pereira",
+          Status: "Ativo",
+          Cargo: "Membro",
+          Periodo: "Noite",
+          RI: "7890",
+          Congregacao: "Sede",
+          Lider: "Líder B",
+          GAPE: "002 - Canaã",
+        },
+        {
+          Nome: "Sara Martins",
+          Status: "Ativo",
+          Cargo: "Evangelista",
+          Periodo: "Manhã",
+          RI: "1122",
+          Congregacao: "Sede",
+          Lider: "Líder C",
+          GAPE: "003 - Gideão",
+        },
+      ];
+      fillSelectOptions(); // Preenche selects após carregar dados mockados
+      showMessage("Dados mockados carregados para demonstração.", "info");
+    }
+
+    applyFilters(); // Aplica os filtros iniciais (todos os membros)
+  } catch (error) {
+    console.error("Erro ao carregar membros:", error);
+    showMessage(`Erro ao carregar membros: ${error.message}`, "error");
+    membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
+  }
+}
+
+// Função para limpar filtros
 function clearFilters() {
-    showMessage("Limpando filtros...", "info");
-    if (filterNameInput) filterNameInput.value = "";
-    if (filterPeriodoSelect) filterPeriodoSelect.value = "";
-    if (filterLiderInput) filterLiderInput.value = "";
-    if (filterGapeInput) filterGapeInput.value = "";
-    applyFilters(); // Reaplicar filtros para resetar o dashboard também
+  showMessage("Limpando filtros...", "info");
+  filterNameInput.value = "";
+  filterPeriodoSelect.value = "";
+  filterLiderInput.value = "";
+  filterGapeInput.value = "";
+  applyFilters();
 }
 
-/**
- * Função auxiliar para aplicar filtros com uma mensagem de feedback.
- */
+// Função para aplicar filtros com mensagem
 function applyFiltersWithMessage() {
-    showMessage("Aplicando filtros...", "info");
-    applyFilters();
+  showMessage("Aplicando filtros...", "info");
+  applyFilters();
 }
 
-/**
- * Alterna a visibilidade do contêiner do dashboard com animação.
- * Também alterna o texto e o ícone do botão de toggle.
- */
-function toggleDashboardVisibility() {
-    if (!dashboardContainer || !actualDashboardSummary || !dashboardOpenIcon || !dashboardCloseIcon || !dashboardOpenText || !dashboardCloseText) {
-        console.warn("Um ou mais elementos do dashboard ou toggle não encontrados.");
-        return;
-    }
+// Event Listeners
+applyFiltersBtn.addEventListener("click", applyFiltersWithMessage);
+document
+  .getElementById("clearFiltersBtn")
+  .addEventListener("click", clearFilters);
 
-    const isHidden = dashboardContainer.classList.contains('max-h-0');
-    const transitionDuration = 700; // Corresponds to Tailwind's duration-700
+// Aplica filtros ao digitar/mudar seleção para uma experiência mais dinâmica
+filterNameInput.addEventListener("input", applyFilters);
+filterPeriodoSelect.addEventListener("change", applyFilters);
+filterLiderInput.addEventListener("input", applyFilters);
+filterGapeInput.addEventListener("input", applyFilters);
 
-    if (isHidden) {
-        // MOSTRAR: Remove classes de ocultação e define max-height dinamicamente
-        dashboardContainer.classList.remove('max-h-0', 'opacity-0');
-        // Define max-height para o scrollHeight do conteúdo para a transição suave
-        dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`;
-        dashboardContainer.style.opacity = '1';
-        
-        // Após a transição, remover max-height para permitir que o conteúdo se ajuste naturalmente.
-        // Isso é importante se o conteúdo dentro do dashboard puder mudar de tamanho dinamicamente.
-        setTimeout(() => {
-            dashboardContainer.style.maxHeight = 'none';
-        }, transitionDuration); 
-        
-        // Alterna icon e texto para "Fechar Resumo"
-        dashboardOpenIcon.classList.add('hidden');
-        dashboardCloseIcon.classList.remove('hidden');
-        dashboardOpenText.classList.add('hidden');
-        dashboardCloseText.classList.remove('hidden');
-
-    } else {
-        // ESCONDER: Define max-height atual para permitir transição, depois oculta
-        dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`; // Garante que a altura inicial é lida corretamente
-        // Pequeno atraso para garantir que a transição de max-height seja aplicada antes de mudar para 0.
-        setTimeout(() => {
-            dashboardContainer.style.maxHeight = '0';
-            dashboardContainer.style.opacity = '0';
-            dashboardContainer.classList.add('max-h-0'); // Re-adiciona para estado oculto definitivo
-        }, 10); 
-
-        // Alterna icon e texto para "Ver Resumo"
-        dashboardOpenIcon.classList.remove('hidden');
-        dashboardCloseIcon.classList.add('hidden');
-        dashboardOpenText.classList.remove('hidden');
-        dashboardCloseText.classList.add('hidden');
-    }
-}
-
-
-// ------------------------------------------------------
-// INICIALIZAÇÃO DA APLICAÇÃO (Após o DOM estar completamente carregado)
-// ------------------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    // Adiciona event listeners aos botões e campos de filtro.
-    // Verificações 'if (element)' para evitar erros se o HTML não tiver os elementos.
-    if (applyFiltersBtn) applyFiltersBtn.addEventListener("click", applyFiltersWithMessage);
-    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-    if (clearFiltersBtn) clearFiltersBtn.addEventListener("click", clearFilters);
-
-    if (filterNameInput) filterNameInput.addEventListener("input", applyFilters);
-    if (filterPeriodoSelect) filterPeriodoSelect.addEventListener("change", applyFilters);
-    if (filterLiderInput) filterLiderInput.addEventListener("change", applyFilters);
-    if (filterGapeInput) filterGapeInput.addEventListener("change", applyFilters);
-
-    // Event listener para o botão de toggle do dashboard
-    if (toggleDashboardBtn) {
-        toggleDashboardBtn.addEventListener("click", toggleDashboardVisibility);
-    } else {
-        console.warn("Elemento toggleDashboardBtn não encontrado no HTML. O dashboard não poderá ser alternado.");
-    }
-
-    /**
-     * Função assíncrona principal para inicializar toda a aplicação.
-     * Ela carrega os dados dos membros, popula filtros, exibe cards e atualiza o dashboard.
-     */
-    async function initializeApp() {
-        try {
-            // 1. Carrega todos os membros do backend e os armazena globalmente.
-            allMembersData = await fetchMembers(); 
-            
-            // 2. Preenche as opções dos selects de filtro com base nos dados carregados.
-            fillSelectOptions();
-            
-            // 3. Aplica os filtros (isso resultará na chamada de displayMembers e atualização de presenças filtradas).
-            applyFilters(); 
-            
-            // 4. Atualiza o card de resumo do dashboard (Período, Líder, GAPE) com base NOS FILTROS.
-            // Esta chamada AGORA reflete os valores selecionados nos filtros, e não de células fixas.
-            // updateDashboardInfoFromFilters() é chamada dentro de applyFilters() para manter sincronia
-            // mas também é bom chamar aqui na inicialização para garantir que os valores iniciais (Todos) sejam setados.
-            updateDashboardInfoFromFilters();
-
-            // Exibe uma mensagem de sucesso ou informação sobre a quantidade de membros.
-            if (allMembersData.length > 0) {
-                showMessage(`Membros carregados com sucesso! Total: ${allMembersData.length}`, "success");
-            } else {
-                 showMessage("Nenhum membro encontrado ou dados vazios.", "info");
-            }
-
-        } catch (error) {
-            console.error("Erro na inicialização da aplicação:", error);
-            showMessage(`Erro crítico na inicialização: ${error.message}`, "error");
-        }
-    }
-
-    // Chama a função de inicialização quando o DOM estiver pronto.
-    initializeApp();
-});
+// Carrega os membros ao iniciar o aplicativo
+window.onload = fetchMembers;

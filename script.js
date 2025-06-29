@@ -27,13 +27,19 @@ const messageArea = document.getElementById("messageArea");
 const dashboardPresencasMesEl = document.getElementById("dashboardPresencasMes");
 const dashboardPeriodoEl = document.getElementById("dashboardPeriodo");
 const dashboardLiderEl = document.getElementById("dashboardLider");
-// CORRIGIDO: Typo aqui
 const dashboardGapeEl = document.getElementById("dashboardGape"); 
 
 // NOVOS ELEMENTOS para o toggle e container do dashboard
 const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
 const dashboardContainer = document.getElementById("dashboardContainer");
 const actualDashboardSummary = document.getElementById("actualDashboardSummary"); // O conteúdo interno do dashboard
+
+// NOVOS ELEMENTOS: Para o toggle de ícone e texto do botão
+const dashboardOpenIcon = document.getElementById("dashboardOpenIcon");
+const dashboardCloseIcon = document.getElementById("dashboardCloseIcon");
+const dashboardOpenText = document.getElementById("dashboardOpenText");
+const dashboardCloseText = document.getElementById("dashboardCloseText");
+
 
 // ------------------------------------------------------
 // VARIÁVEIS DE ESTADO
@@ -118,7 +124,7 @@ async function fetchMembers() {
         return []; // Retorna array vazio para evitar erros subsequentes.
     }
 
-    // NOVO: Ativa o indicador de carregamento global
+    // Ativa o indicador de carregamento global
     toggleGlobalLoading(true, "Carregando dados dos membros...");
     membersCardsContainer.innerHTML = ''; // Limpa os cards antigos enquanto carrega
 
@@ -140,7 +146,7 @@ async function fetchMembers() {
         membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
         return []; // Retorna um array vazio em caso de erro.
     } finally {
-        // NOVO: Desativa o indicador de carregamento global quando a busca terminar (sucesso ou erro)
+        // Desativa o indicador de carregamento global quando a busca terminar (sucesso ou erro)
         toggleGlobalLoading(false);
     }
 }
@@ -294,7 +300,6 @@ async function displayMembers(members) {
                 const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
                 card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
 
-                // A parte de 'Presenças no Mês' no dashboard já é atualizada em displayMembers
                 // Re-calcula e atualiza os campos Período, Líder e GAPE do dashboard após o evento
                 updateDashboardInfoFromFilters(); // Chama a função para atualizar dashboard com filtros
             } catch (e) {
@@ -431,10 +436,11 @@ function applyFiltersWithMessage() {
 
 /**
  * NOVO: Alterna a visibilidade do contêiner do dashboard com animação.
+ * Também alterna o texto e o ícone do botão de toggle.
  */
 function toggleDashboardVisibility() {
-    if (!dashboardContainer || !actualDashboardSummary) {
-        console.warn("Elementos do dashboard não encontrados para toggle.");
+    if (!dashboardContainer || !actualDashboardSummary || !dashboardOpenIcon || !dashboardCloseIcon || !dashboardOpenText || !dashboardCloseText) {
+        console.warn("Um ou mais elementos do dashboard ou toggle não encontrados.");
         return;
     }
 
@@ -447,8 +453,17 @@ function toggleDashboardVisibility() {
         // Define max-height para o scrollHeight do conteúdo para a transição suave
         dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`;
         dashboardContainer.style.opacity = '1';
-        // Remove 'overflow-hidden' temporariamente após a transição, se necessário para conteúdo responsivo
-        // setTimeout(() => { dashboardContainer.style.maxHeight = 'none'; }, 700); // Ajuste o tempo da transição
+        
+        // Alterna icon e texto para "Fechar Resumo"
+        dashboardOpenIcon.classList.add('hidden');
+        dashboardCloseIcon.classList.remove('hidden');
+        dashboardOpenText.classList.add('hidden');
+        dashboardCloseText.classList.remove('hidden');
+
+        // Opcional: Se o conteúdo pode mudar de altura, após a transição completa,
+        // pode ser necessário remover o maxHeight para permitir que ele se ajuste.
+        // setTimeout(() => { dashboardContainer.style.maxHeight = 'none'; }, 700); 
+
     } else {
         // ESCONDER: Define max-height atual para permitir transição, depois oculta
         dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`; // Garante que a altura inicial é lida corretamente
@@ -457,6 +472,12 @@ function toggleDashboardVisibility() {
             dashboardContainer.style.opacity = '0';
             dashboardContainer.classList.add('max-h-0'); // Re-adiciona para estado oculto definitivo
         }, 10); // Pequeno atraso para garantir que a transição de max-height seja aplicada
+
+        // Alterna icon e texto para "Ver Resumo"
+        dashboardOpenIcon.classList.remove('hidden');
+        dashboardCloseIcon.classList.add('hidden');
+        dashboardOpenText.classList.remove('hidden');
+        dashboardCloseText.classList.add('hidden');
     }
 }
 

@@ -200,14 +200,15 @@ async function displayMembers(members) {
     }
     container.innerHTML = ""; // Limpa o conteúdo atual do contêiner.
 
-    // Busca as contagens de presença totais para cada membro para exibir nos cards.
-    const presencasTotaisPorMembro = await getPresencasTotal(); 
+    // Busca as contagens de presença totais e a última presença para cada membro.
+    // 'presencesData' agora contém { count: X, lastAttendance: Y }
+    const presencesData = await getPresencasTotal(); 
 
     // Calcular total de presenças dos membros filtrados para o Dashboard
     let totalFilteredPresences = 0;
     members.forEach(member => {
         const memberNameKey = (member.Nome || "").trim();
-        totalFilteredPresences += (presencasTotaisPorMembro[memberNameKey] || 0);
+        totalFilteredPresences += (presencesData[memberNameKey]?.count || 0);
     });
     // Atualiza o dashboardPresencasMesEl com a soma das presenças dos membros filtrados
     if (dashboardPresencasMesEl) {
@@ -224,7 +225,9 @@ async function displayMembers(members) {
     // Itera sobre os membros e cria um card HTML para cada um.
     members.forEach((member, idx) => {
         const memberNameKey = (member.Nome || "").trim();
-        const presencas = presencasTotaisPorMembro[memberNameKey] || 0; 
+        const memberPresenceInfo = presencesData[memberNameKey] || { count: 0, lastAttendance: null };
+        const presencas = memberPresenceInfo.count;
+        const lastAttendance = memberPresenceInfo.lastAttendance || "Nenhuma"; // Exibe "Nenhuma" se não houver
 
         const card = document.createElement("div");
         card.className = "fade-in-row bg-white rounded-xl shadow-md p-4 flex flex-col gap-2 relative";
@@ -232,6 +235,7 @@ async function displayMembers(members) {
         card.innerHTML = `
             <div class="font-bold text-lg text-gray-800">${member.Nome || "N/A"}</div>
             <div class="text-sm text-green-700 font-bold"><b>Presenças totais:</b> <span class="presencas-mes">${presencas}</span></div>
+            <div class="text-sm text-gray-600"><b>Última Presença:</b> <span class="last-attendance-date">${lastAttendance}</span></div> <!-- NOVO ELEMENTO AQUI -->
             <div class="text-sm text-gray-600"><b>Período:</b> ${member.Periodo || "N/A"}</div>
             <div class="text-sm text-gray-600"><b>Líder:</b> ${member.Lider || "N/A"}</div>
             <div class="text-sm text-gray-600"><b>GAPE:</b> ${member.GAPE || "N/A"}</div>
@@ -248,6 +252,7 @@ async function displayMembers(members) {
         const checkbox = card.querySelector(".presence-checkbox");
         const infoDiv = card.querySelector(".presence-info");
         const confirmBtn = card.querySelector(".confirm-presence-btn");
+        const lastAttendanceSpan = card.querySelector(".last-attendance-date"); // Captura o novo span
 
         checkbox.addEventListener("change", function () {
             if (this.checked) {
@@ -296,9 +301,12 @@ async function displayMembers(members) {
                 checkbox.disabled = true;
 
                 // Atualiza as contagens de presença nos cards e no dashboard após registrar uma presença.
-                const updatedPresencesForMembers = await getPresencasTotal(); 
-                const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
-                card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
+                const updatedPresencesData = await getPresencasTotal(); // Pega a nova estrutura
+                const updatedMemberPresenceInfo = updatedPresencesData[(member.Nome || "").trim()] || { count: 0, lastAttendance: null };
+                
+                card.querySelector(".presencas-mes").textContent = updatedMemberPresenceInfo.count;
+                lastAttendanceSpan.textContent = updatedMemberPresenceInfo.lastAttendance || "Nenhuma"; // Atualiza o novo span
+
 
                 // Re-calcula e atualiza os campos Período, Líder e GAPE do dashboard após o evento
                 updateDashboardInfoFromFilters(); // Chama a função para atualizar dashboard com filtros
@@ -318,8 +326,8 @@ async function displayMembers(members) {
 }
 
 /**
- * Função para obter as contagens de presença totais por cada membro.
- * @returns {Promise<Object>} Um objeto onde as chaves são os nomes dos membros e os valores são as contagens.
+ * Função para obter as contagens de presença totais e a última presença para cada membro.
+ * @returns {Promise<Object>} Um objeto onde as chaves são os nomes dos membros e os valores são objetos { count: Number, lastAttendance: String }.
  */
 async function getPresencasTotal() {
     const url = `${BACKEND_URL}/get-presencas-total`; 
@@ -342,8 +350,7 @@ async function getPresencasTotal() {
  * @returns {Promise<Object>} Um objeto com os dados básicos do dashboard (período, líder, GAPE).
  */
 async function updateDashboardSummary() { 
-    // Esta função foi renomeada para ser mais clara.
-    // Ela busca os dados gerais do dashboard que não dependem diretamente dos filtros (ex: do mês).
+    // Esta função busca os dados gerais do dashboard que não dependem diretamente dos filtros (ex: do mês).
     // O Apps Script 'presencasMes' retorna esses dados para o dashboard.
     const url = `${BACKEND_URL}/get-presencas-mes`; 
     try {

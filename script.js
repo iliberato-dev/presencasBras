@@ -23,14 +23,17 @@ const applyFiltersBtn = document.getElementById("applyFiltersBtn");
 const membersCardsContainer = document.getElementById("membersCardsContainer");
 const messageArea = document.getElementById("messageArea");
 
+// Elementos do Dashboard
 const dashboardPresencasMesEl = document.getElementById("dashboardPresencasMes");
 const dashboardPeriodoEl = document.getElementById("dashboardPeriodo");
 const dashboardLiderEl = document.getElementById("dashboardLider");
-const dashboardGapeEl = document = document.getElementById("dashboardGape");
+// CORRIGIDO: Typo aqui
+const dashboardGapeEl = document.getElementById("dashboardGape"); 
 
-// NOVO: Elemento para o indicador de carregamento global
-const globalLoadingIndicator = document.getElementById("globalLoadingIndicator");
-
+// NOVOS ELEMENTOS para o toggle e container do dashboard
+const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
+const dashboardContainer = document.getElementById("dashboardContainer");
+const actualDashboardSummary = document.getElementById("actualDashboardSummary"); // O conteúdo interno do dashboard
 
 // ------------------------------------------------------
 // VARIÁVEIS DE ESTADO
@@ -426,6 +429,38 @@ function applyFiltersWithMessage() {
     applyFilters();
 }
 
+/**
+ * NOVO: Alterna a visibilidade do contêiner do dashboard com animação.
+ */
+function toggleDashboardVisibility() {
+    if (!dashboardContainer || !actualDashboardSummary) {
+        console.warn("Elementos do dashboard não encontrados para toggle.");
+        return;
+    }
+
+    // Verifica se o dashboard está atualmente oculto (max-h-0 e opacity-0)
+    const isHidden = dashboardContainer.classList.contains('max-h-0');
+
+    if (isHidden) {
+        // MOSTRAR: Remove classes de ocultação e define max-height dinamicamente
+        dashboardContainer.classList.remove('max-h-0', 'opacity-0');
+        // Define max-height para o scrollHeight do conteúdo para a transição suave
+        dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`;
+        dashboardContainer.style.opacity = '1';
+        // Remove 'overflow-hidden' temporariamente após a transição, se necessário para conteúdo responsivo
+        // setTimeout(() => { dashboardContainer.style.maxHeight = 'none'; }, 700); // Ajuste o tempo da transição
+    } else {
+        // ESCONDER: Define max-height atual para permitir transição, depois oculta
+        dashboardContainer.style.maxHeight = `${actualDashboardSummary.scrollHeight}px`; // Garante que a altura inicial é lida corretamente
+        setTimeout(() => {
+            dashboardContainer.style.maxHeight = '0';
+            dashboardContainer.style.opacity = '0';
+            dashboardContainer.classList.add('max-h-0'); // Re-adiciona para estado oculto definitivo
+        }, 10); // Pequeno atraso para garantir que a transição de max-height seja aplicada
+    }
+}
+
+
 // ------------------------------------------------------
 // INICIALIZAÇÃO DA APLICAÇÃO (Após o DOM estar completamente carregado)
 // ------------------------------------------------------
@@ -440,6 +475,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (filterPeriodoSelect) filterPeriodoSelect.addEventListener("change", applyFilters);
     if (filterLiderInput) filterLiderInput.addEventListener("change", applyFilters);
     if (filterGapeInput) filterGapeInput.addEventListener("change", applyFilters);
+
+    // NOVO: Event listener para o botão de toggle do dashboard
+    if (toggleDashboardBtn) {
+        toggleDashboardBtn.addEventListener("click", toggleDashboardVisibility);
+    } else {
+        console.warn("Elemento toggleDashboardBtn não encontrado no HTML. O dashboard não poderá ser alternado.");
+    }
 
     /**
      * Função assíncrona principal para inicializar toda a aplicação.

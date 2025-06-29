@@ -12,6 +12,13 @@ const applyFiltersBtn = document.getElementById("applyFiltersBtn");
 const membersCardsContainer = document.getElementById("membersCardsContainer");
 const messageArea = document.getElementById("messageArea");
 
+// NOVOS ELEMENTOS DO DOM para o Dashboard
+const dashboardPresencasMesEl = document.getElementById("dashboardPresencasMes");
+const dashboardPeriodoEl = document.getElementById("dashboardPeriodo");
+const dashboardLiderEl = document.getElementById("dashboardLider");
+const dashboardGapeEl = document.getElementById("dashboardGape");
+
+
 // ===> NOVA URL BASE DO BACKEND NO RENDER <===
 const BACKEND_URL = "https://presencasbras.onrender.com";
 
@@ -19,293 +26,341 @@ const BACKEND_URL = "https://presencasbras.onrender.com";
  * Exibe uma mensagem de status para o usuário.
  */
 function showMessage(message, type = "info") {
-  if (message === "Carregando dados dos membros...") return;
-  messageArea.textContent = message;
-  messageArea.className = "message-box show";
-  messageArea.classList.remove("hidden");
+    if (message === "Carregando dados dos membros...") return;
+    messageArea.textContent = message;
+    messageArea.className = "message-box show";
+    messageArea.classList.remove("hidden");
 
-  if (type === "success") {
-    messageArea.classList.add("message-success");
-  } else if (type === "error") {
-    messageArea.classList.add("message-error");
-  } else {
-    messageArea.classList.add("bg-blue-100", "text-blue-800");
-  }
-  setTimeout(() => {
-    messageArea.classList.remove("show");
-    setTimeout(() => messageArea.classList.add("hidden"), 500);
-  }, 5000);
+    if (type === "success") {
+        messageArea.classList.add("message-success");
+    } else if (type === "error") {
+        messageArea.classList.add("message-error");
+    } else {
+        messageArea.classList.add("bg-blue-100", "text-blue-800");
+    }
+    setTimeout(() => {
+        messageArea.classList.remove("show");
+        setTimeout(() => messageArea.classList.add("hidden"), 500);
+    }, 5000);
 }
 
 /**
  * Carrega os dados dos membros (via backend).
  */
 async function fetchMembers() {
-  membersCardsContainer.innerHTML = `
-    <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
-      <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-      </svg>
-      <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
-    </div>
-  `;
+    membersCardsContainer.innerHTML = `
+        <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
+            <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
+        </div>
+    `;
 
-  try {
-    // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER PARA PEGAR MEMBROS <===
-    const response = await fetch(`${BACKEND_URL}/get-membros`);
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`);
-    }
-    const data = await response.json();
-    allMembersData = data.membros || []; // O backend deve retornar { membros: [...] }
-    fillSelectOptions();
-    if (allMembersData.length === 0) {
-      showMessage("Nenhum membro encontrado ou dados vazios.", "info");
-    } else {
-      showMessage(
-        `Membros carregados com sucesso! Total: ${allMembersData.length}`,
-        "success"
-      );
-    }
+    try {
+        // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER PARA PEGAR MEMBROS <===
+        const response = await fetch(`${BACKEND_URL}/get-membros`);
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        const data = await response.json();
+        allMembersData = data.membros || []; // O backend deve retornar { membros: [...] }
+        fillSelectOptions();
+        if (allMembersData.length === 0) {
+            showMessage("Nenhum membro encontrado ou dados vazios.", "info");
+        } else {
+            showMessage(
+                `Membros carregados com sucesso! Total: ${allMembersData.length}`,
+                "success"
+            );
+        }
 
-    applyFilters();
-  } catch (error) {
-    console.error("Erro ao carregar membros:", error);
-    showMessage(`Erro ao carregar membros: ${error.message}`, "error");
-    membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
-  }
+        applyFilters();
+    } catch (error) {
+        console.error("Erro ao carregar membros:", error);
+        showMessage(`Erro ao carregar membros: ${error.message}`, "error");
+        membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
+    }
 }
 
 /**
  * Aplica os filtros aos dados dos membros e atualiza a tabela.
  */
 function applyFilters() {
-  const nameFilter = filterNameInput.value.toLowerCase().trim();
-  const periodoFilter = filterPeriodoSelect.value.toLowerCase().trim();
-  const liderFilter = filterLiderInput.value.toLowerCase().trim();
-  const gapeFilter = filterGapeInput.value.toLowerCase().trim();
+    const nameFilter = filterNameInput.value.toLowerCase().trim();
+    const periodoFilter = filterPeriodoSelect.value.toLowerCase().trim();
+    const liderFilter = filterLiderInput.value.toLowerCase().trim();
+    const gapeFilter = filterGapeInput.value.toLowerCase().trim();
 
-  filteredMembers = allMembersData.filter((member) => {
-    const memberName = String(member.Nome || "").toLowerCase();
-    const memberPeriodo = String(member.Periodo || "").toLowerCase();
-    const memberLider = String(member.Lider || "").toLowerCase();
-    const memberGape = String(member.GAPE || "").toLowerCase();
+    filteredMembers = allMembersData.filter((member) => {
+        const memberName = String(member.Nome || "").toLowerCase();
+        const memberPeriodo = String(member.Periodo || "").toLowerCase();
+        const memberLider = String(member.Lider || "").toLowerCase();
+        const memberGape = String(member.GAPE || "").toLowerCase();
 
-    const matchesName = nameFilter === "" || memberName.includes(nameFilter);
-    const matchesPeriodo =
-      periodoFilter === "" || memberPeriodo.includes(periodoFilter);
-    const matchesLider =
-      liderFilter === "" || memberLider.includes(liderFilter);
-    const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
+        const matchesName = nameFilter === "" || memberName.includes(nameFilter);
+        const matchesPeriodo =
+            periodoFilter === "" || memberPeriodo.includes(periodoFilter);
+        const matchesLider =
+            liderFilter === "" || memberLider.includes(liderFilter);
+        const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
 
-    return matchesName && matchesPeriodo && matchesLider && matchesGape;
-  });
+        return matchesName && matchesPeriodo && matchesLider && matchesGape;
+    });
 
-  displayMembers(filteredMembers);
+    displayMembers(filteredMembers);
 }
 
 /**
- * Exibe os membros na tela como cards, cada um com seu checkbox de presença.
+ * Exibe os membros na tela como cards, cada uno com seu checkbox de presença.
  * Agora, ao marcar o checkbox, registra a presença com data e hora.
  */
 async function displayMembers(members) {
-  const container = document.getElementById("membersCardsContainer");
-  container.innerHTML = "";
+    const container = document.getElementById("membersCardsContainer");
+    container.innerHTML = "";
 
-  // Buscar presenças do mês (via backend)
-  const presencasMesAtual = await getPresencasMes(); 
+    // NOVO: Chamada para obter os dados do dashboard (Período, Líder, GAPE, Presenças Mês total)
+    // O Apps Script 'presencasMes' retorna esses dados para o dashboard
+    const dashboardData = await fetchDashboardSummary(); 
+    
+    // Atualiza os elementos do dashboard principal
+    if (dashboardPresencasMesEl) dashboardPresencasMesEl.textContent = dashboardData.presencasMes || 0;
+    if (dashboardPeriodoEl) dashboardPeriodoEl.textContent = dashboardData.periodo || "N/A";
+    if (dashboardLiderEl) dashboardLiderEl.textContent = dashboardData.lider || "N/A"; // <-- Agora deve pegar "Leandro Mendes"
+    if (dashboardGapeEl) dashboardGapeEl.textContent = dashboardData.gape || "N/A";
 
-  if (members.length === 0) {
-    container.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">Nenhum membro encontrado com os filtros aplicados.</div>`;
-    return;
-  }
+    // AGORA: Buscar as presenças TOTAIS por membro (para os cards individuais)
+    // Usaremos getPresencasTotal() que retorna { "Nome": count }
+    const presencasTotaisPorMembro = await getPresencasTotal(); 
 
-  members.forEach((member, idx) => {
-    // Use o nome do membro (limpo) para buscar no objeto de presenças
-    const memberNameKey = (member.Nome || "").trim();
-    const presencas = presencasMesAtual[memberNameKey] || 0; // Usando presencasMesAtual
+    if (members.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-4 text-gray-500">Nenhum membro encontrado com os filtros aplicados.</div>`;
+        return;
+    }
 
-    const card = document.createElement("div");
-    card.className =
-      "fade-in-row bg-white rounded-xl shadow-md p-4 flex flex-col gap-2 relative";
-    card.style.animationDelay = `${idx * 0.04}s`;
-    card.innerHTML = `
-      <div class="font-bold text-lg text-gray-800">${member.Nome || "N/A"}</div>
-      <div class="text-sm text-green-700 font-bold"><b>Presenças no mês:</b> <span class="presencas-mes">${presencas}</span></div>
-      <div class="text-sm text-gray-600"><b>Período:</b> ${
-        member.Periodo || "N/A"
-      }</div>
-      <div class="text-sm text-gray-600"><b>Líder:</b> ${
-        member.Lider || "N/A"
-      }</div>
-      <div class="text-sm text-gray-600"><b>GAPE:</b> ${
-        member.GAPE || "N/A"
-      }</div>
-      <label class="flex items-center gap-2 mt-2">
-          <input type="checkbox" class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 presence-checkbox" data-member-name="${
-            member.Nome
-          }">
-          <span class="text-sm text-gray-700">Presente</span>
-      </label>
-      <button class="btn-confirm-presence w-full mt-2 hidden confirm-presence-btn">Confirmar Presença</button>
-      <div class="text-xs text-green-700 mt-1 hidden presence-info"></div>
-    `;
-    container.appendChild(card);
+    members.forEach((member, idx) => {
+        const memberNameKey = (member.Nome || "").trim();
+        // Use presencasTotaisPorMembro para o card individual
+        const presencas = presencasTotaisPorMembro[memberNameKey] || 0; 
 
-    // Adiciona evento para marcar presença individual
-    const checkbox = card.querySelector(".presence-checkbox");
-    const infoDiv = card.querySelector(".presence-info");
-    const confirmBtn = card.querySelector(".confirm-presence-btn");
-    checkbox.addEventListener("change", function () {
-      if (this.checked) {
-        confirmBtn.classList.remove("hidden");
-      } else {
-        confirmBtn.classList.add("hidden");
-        infoDiv.textContent = "";
-        infoDiv.classList.add("hidden");
-      }
-    });
-    confirmBtn.addEventListener("click", async function () {
-      const now = new Date();
-      const dia = String(now.getDate()).padStart(2, "0");
-      const mes = String(now.getMonth() + 1).padStart(2, "0");
-      const ano = now.getFullYear();
-      const hora = String(now.getHours()).padStart(2, "0");
-      const min = String(now.getMinutes()).padStart(2, "0");
-      const seg = String(now.getSeconds()).padStart(2, "0");
-      const dataHora = `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
-      
-      infoDiv.textContent = `Enviando presença...`; // Mensagem de feedback
-      infoDiv.classList.remove("hidden");
-      confirmBtn.disabled = true; // Desabilita o botão enquanto envia
+        const card = document.createElement("div");
+        card.className =
+            "fade-in-row bg-white rounded-xl shadow-md p-4 flex flex-col gap-2 relative";
+        card.style.animationDelay = `${idx * 0.04}s`;
+        card.innerHTML = `
+            <div class="font-bold text-lg text-gray-800">${member.Nome || "N/A"}</div>
+            <div class="text-sm text-green-700 font-bold"><b>Presenças no mês:</b> <span class="presencas-mes">${presencas}</span></div>
+            <div class="text-sm text-gray-600"><b>Período:</b> ${
+                member.Periodo || "N/A"
+            }</div>
+            <div class="text-sm text-gray-600"><b>Líder:</b> ${
+                member.Lider || "N/A" // Este é o líder do membro, que vem do getMembros
+            }</div>
+            <div class="text-sm text-gray-600"><b>GAPE:</b> ${
+                member.GAPE || "N/A"
+            }</div>
+            <label class="flex items-center gap-2 mt-2">
+                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 presence-checkbox" data-member-name="${
+                    member.Nome
+                }">
+                <span class="text-sm text-gray-700">Presente</span>
+            </label>
+            <button class="btn-confirm-presence w-full mt-2 hidden confirm-presence-btn">Confirmar Presença</button>
+            <div class="text-xs text-green-700 mt-1 hidden presence-info"></div>
+        `;
+        container.appendChild(card);
 
-      try {
-        // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER PARA REGISTRAR PRESENÇA <===
-        const response = await fetch(`${BACKEND_URL}/presenca`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome: member.Nome,
-            data: `${dia}/${mes}/${ano}`,
-            hora: `${hora}:${min}:${seg}`,
-            sheet: "PRESENCAS", // 'sheet' pode não ser necessário se o Apps Script não usar
-          }),
+        // Adiciona evento para marcar presença individual
+        const checkbox = card.querySelector(".presence-checkbox");
+        const infoDiv = card.querySelector(".presence-info");
+        const confirmBtn = card.querySelector(".confirm-presence-btn");
+        checkbox.addEventListener("change", function () {
+            if (this.checked) {
+                confirmBtn.classList.remove("hidden");
+            } else {
+                confirmBtn.classList.add("hidden");
+                infoDiv.textContent = "";
+                infoDiv.classList.add("hidden");
+            }
         });
+        confirmBtn.addEventListener("click", async function () {
+            const now = new Date();
+            const dia = String(now.getDate()).padStart(2, "0");
+            const mes = String(now.getMonth() + 1).padStart(2, "0");
+            const ano = now.getFullYear();
+            const hora = String(now.getHours()).padStart(2, "0");
+            const min = String(now.getMinutes()).padStart(2, "0");
+            const seg = String(now.getSeconds()).padStart(2, "0");
+            const dataHora = `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
+            
+            infoDiv.textContent = `Enviando presença...`; // Mensagem de feedback
+            infoDiv.classList.remove("hidden");
+            confirmBtn.disabled = true; // Desabilita o botão enquanto envia
 
-        if (!response.ok) {
-            const errorData = await response.json(); // Backend deve retornar JSON em caso de erro
-            throw new Error(`Erro ao registrar presença: ${response.status} - ${errorData.details || errorData.message || 'Erro desconhecido'}`);
-        }
+            try {
+                // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER PARA REGISTRAR PRESENÇA <===
+                const response = await fetch(`${BACKEND_URL}/presenca`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nome: member.Nome,
+                        data: `${dia}/${mes}/${ano}`,
+                        hora: `${hora}:${min}:${seg}`,
+                        sheet: "PRESENCAS", // 'sheet' pode não ser necessário se o Apps Script não usar
+                    }),
+                });
 
-        infoDiv.textContent = `Presença marcada em ${dataHora}`;
-        infoDiv.classList.remove("hidden");
-        confirmBtn.classList.add("hidden");
-        checkbox.disabled = true;
+                if (!response.ok) {
+                    const errorData = await response.json(); // Backend deve retornar JSON em caso de erro
+                    throw new Error(`Erro ao registrar presença: ${response.status} - ${errorData.details || errorData.message || 'Erro desconhecido'}`);
+                }
 
-        // Atualiza apenas o número de presenças deste card (via backend)
-        const presencasMesAtualizado = await getPresencasMes();
-        const presencasAtual = presencasMesAtualizado[(member.Nome || "").trim()] || 0; // Use o nome limpo
-        card.querySelector(".presencas-mes").textContent = presencasAtual;
+                infoDiv.textContent = `Presença marcada em ${dataHora}`;
+                infoDiv.classList.remove("hidden");
+                confirmBtn.classList.add("hidden");
+                checkbox.disabled = true;
 
-      } catch (e) {
-        console.error("Falha ao enviar presença para o servidor:", e);
-        showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
-        infoDiv.textContent = `Erro ao marcar presença!`;
-        infoDiv.classList.remove("hidden");
-        checkbox.checked = false; // Desmarca o checkbox em caso de erro
-        confirmBtn.classList.add("hidden"); // Esconde o botão
-        checkbox.disabled = false; // Reabilita o checkbox
-      } finally {
-          confirmBtn.disabled = false; // Reabilita o botão em qualquer caso
-      }
+                // ATUALIZAÇÃO: Após registrar presença, você precisa re-chamar as funções de busca de dados
+                // para garantir que os números de presença sejam atualizados no card individual e no dashboard.
+                
+                // 1. Atualiza o número de presenças deste card individual (chama presencasTotal)
+                const updatedPresencesForMembers = await getPresencasTotal();
+                const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
+                card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
+
+                // 2. Atualiza o resumo do dashboard (incluindo o total de presenças no mês)
+                await fetchDashboardSummary(); 
+
+            } catch (e) {
+                console.error("Falha ao enviar presença para o servidor:", e);
+                showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
+                infoDiv.textContent = `Erro ao marcar presença!`;
+                infoDiv.classList.remove("hidden");
+                checkbox.checked = false; // Desmarca o checkbox em caso de erro
+                confirmBtn.classList.add("hidden"); // Esconde o botão
+                checkbox.disabled = false; // Reabilita o checkbox
+            } finally {
+                confirmBtn.disabled = false; // Reabilita o botão em qualquer caso
+            }
+        });
     });
-  });
 }
 
 /**
  * Função para obter as presenças do mês (via backend).
+ * ATENÇÃO: Esta função AGORA DEVE CHAMAR o Apps Script 'presencasTotal'
+ * porque ela é usada para as presenças INDIVIDUAIS nos cards.
  */
-async function getPresencasMes() {
-  // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER <===
-  const url = `${BACKEND_URL}/get-presencas-mes`; 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(`Erro ao buscar presenças do mês: ${res.status}`);
+async function getPresencasMes() { // Mudei o nome interno para manter a chamada original
+    // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER <===
+    const url = `${BACKEND_URL}/get-presencas-total`; // Chamando o endpoint que pega a contagem por nome
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Erro ao buscar presenças do mês (individual): ${res.status}`);
+        }
+        return await res.json(); // { "Nome do Membro": 2, ... }
+    } catch (error) {
+        console.error("Erro em getPresencasMes:", error);
+        showMessage("Erro ao carregar presenças do mês para cards.", "error");
+        return {}; // Retorna objeto vazio em caso de erro
     }
-    return await res.json(); // { "Nome do Membro": 2, ... }
-  } catch (error) {
-    console.error("Erro em getPresencasMes:", error);
-    showMessage("Erro ao carregar presenças do mês.", "error");
-    return {}; // Retorna objeto vazio em caso de erro
-  }
 }
+
 
 /**
  * Função para obter o total de presenças (via backend).
+ * (Esta função será removida ou refatorada se getPresencasMes assumir o papel)
+ * O SEU CÓDIGO JÁ TEM ESTA FUNÇÃO, ENTÃO VOU MANTÊ-LA, MAS ELA NÃO SERÁ USADA
+ * NOS CARDS INDIVIDUAIS COM AS MUDANÇAS ACIMA.
  */
-async function getPresencasTotal() {
-  // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER <===
-  const url = `${BACKEND_URL}/get-presencas-total`; 
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(`Erro ao buscar presenças totais: ${res.status}`);
+// async function getPresencasTotal() {
+//     // ===> AGORA O FRONTEND CHAMA O BACKEND DO RENDER <===
+//     const url = `${BACKEND_URL}/get-presencas-total`; 
+//     try {
+//         const res = await fetch(url);
+//         if (!res.ok) {
+//             throw new Error(`Erro ao buscar presenças totais: ${res.status}`);
+//         }
+//         return await res.json(); // { "nome do membro": 2, ... }
+//     } catch (error) {
+//         console.error("Erro em getPresencasTotal:", error);
+//         showMessage("Erro ao carregar presenças totais.", "error");
+//         return {}; // Retorna objeto vazio em caso de erro
+//     }
+// }
+
+// NOVA FUNÇÃO: Para buscar os dados do dashboard (Período, Líder, GAPE, Presenças Mês total)
+async function fetchDashboardSummary() {
+    // Este endpoint no backend (e no Apps Script) retorna o objeto de resumo do dashboard
+    const url = `${BACKEND_URL}/get-presencas-mes`; 
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Erro ao buscar resumo do dashboard: ${res.status}`);
+        }
+        const data = await res.json(); // Esperamos { presencasMes: X, periodo: Y, lider: Z, gape: W }
+        return data;
+    } catch (error) {
+        console.error("Erro em fetchDashboardSummary:", error);
+        showMessage("Erro ao carregar resumo do dashboard.", "error");
+        return { presencasMes: 0, periodo: "N/A", lider: "N/A", gape: "N/A" }; // Retorna padrões em caso de erro
     }
-    return await res.json(); // { "nome do membro": 2, ... }
-  } catch (error) {
-    console.error("Erro em getPresencasTotal:", error);
-    showMessage("Erro ao carregar presenças totais.", "error");
-    return {}; // Retorna objeto vazio em caso de erro
-  }
 }
+
 
 // Função para preencher selects de Líder e GAPE dinamicamente
 function fillSelectOptions() {
-  const lideres = [
-    ...new Set(allMembersData.map((m) => m.Lider).filter(Boolean)),
-  ].sort();
-  const gapes = [
-    ...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean)),
-  ].sort();
+    const lideres = [
+        ...new Set(allMembersData.map((m) => m.Lider).filter(Boolean)),
+    ].sort();
+    const gapes = [
+        ...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean)),
+    ].sort();
 
-  filterLiderInput.innerHTML =
-    '<option value="">Todos</option>' +
-    lideres.map((l) => `<option value="${l}">${l}</option>`).join("");
+    filterLiderInput.innerHTML =
+        '<option value="">Todos</option>' +
+        lideres.map((l) => `<option value="${l}">${l}</option>`).join("");
 
-  filterGapeInput.innerHTML =
-    '<option value="">Todos</option>' +
-    gapes.map((g) => `<option value="${g}">${g}</option>`).join("");
+    filterGapeInput.innerHTML =
+        '<option value="">Todos</option>' +
+        gapes.map((g) => `<option value="${g}">${g}</option>`).join("");
 }
 
 // Função para limpar filtros
 function clearFilters() {
-  showMessage("Limpando filtros...", "info");
-  filterNameInput.value = "";
-  filterPeriodoSelect.value = "";
-  filterLiderInput.value = "";
-  filterGapeInput.value = "";
-  applyFilters();
+    showMessage("Limpando filtros...", "info");
+    filterNameInput.value = "";
+    filterPeriodoSelect.value = "";
+    filterLiderInput.value = "";
+    filterGapeInput.value = "";
+    applyFilters();
 }
 
 // Função para aplicar filtros com mensagem
 function applyFiltersWithMessage() {
-  showMessage("Aplicando filtros...", "info");
-  applyFilters();
+    showMessage("Aplicando filtros...", "info");
+    applyFilters();
 }
 
 // Event Listeners
 applyFiltersBtn.addEventListener("click", applyFiltersWithMessage);
 document
-  .getElementById("clearFiltersBtn")
-  .addEventListener("click", clearFilters);
+    .getElementById("clearFiltersBtn")
+    .addEventListener("click", clearFilters);
 
 filterNameInput.addEventListener("input", applyFilters);
 filterPeriodoSelect.addEventListener("change", applyFilters);
 // CORRIGIDO: Evento 'change' para selects, não 'input'
-filterLiderInput.addEventListener("change", applyFilters); 
+filterLiderInput.addEventListener("change", applyFilters);    
 filterGapeInput.addEventListener("change", applyFilters);
 
-// Carrega os membros ao iniciar o aplicativo
-window.onload = fetchMembers;
+// Carrega os membros e o resumo do dashboard ao iniciar o aplicativo
+window.onload = async () => {
+    // Primeiro, carregue os membros e preencha os filtros
+    await fetchMembers(); 
+    // Em seguida, carregue e exiba os dados do dashboard
+    // A chamada a fetchDashboardSummary já acontece dentro de displayMembers() agora
+    // para garantir que os dados do dashboard sejam atualizados junto com os cards de membros.
+};

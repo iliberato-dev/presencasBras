@@ -103,7 +103,7 @@ async function fetchMembers() {
         }
         const data = await response.json(); // Converte a resposta para JSON.
         // O backend deve retornar um objeto com a propriedade 'membros'.
-        console.log("fetchMembers: Dados de membros recebidos do backend:", data.membros); // NOVO LOG
+        console.log("fetchMembers: Dados de membros recebidos do backend:", data.membros); 
         return data.membros || []; 
     } catch (error) {
         console.error("Erro ao carregar membros:", error);
@@ -140,7 +140,6 @@ function applyFilters() {
             liderFilter === "" || memberLider.includes(liderFilter);
         const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
 
-        // Retorna true se o membro corresponder a TODOS os filtros.
         return matchesName && matchesPeriodo && matchesLider && matchesGape;
     });
 
@@ -162,6 +161,18 @@ async function displayMembers(members) {
 
     // Busca as contagens de presença totais para cada membro para exibir nos cards.
     const presencasTotaisPorMembro = await getPresencasTotal(); 
+
+    // NOVO: Calcular total de presenças dos membros filtrados para o Dashboard
+    let totalFilteredPresences = 0;
+    members.forEach(member => {
+        const memberNameKey = (member.Nome || "").trim();
+        totalFilteredPresences += (presencasTotaisPorMembro[memberNameKey] || 0);
+    });
+    // Atualiza o dashboardPresencasMesEl com a soma das presenças dos membros filtrados
+    if (dashboardPresencasMesEl) {
+        dashboardPresencasMesEl.textContent = totalFilteredPresences;
+    }
+
 
     if (members.length === 0) {
         // Exibe uma mensagem se nenhum membro for encontrado após os filtros.
@@ -248,7 +259,7 @@ async function displayMembers(members) {
                 const updatedIndividualPresence = updatedPresencesForMembers[(member.Nome || "").trim()] || 0;
                 card.querySelector(".presencas-mes").textContent = updatedIndividualPresence;
 
-                await updateDashboardSummary(); // Atualiza o resumo do dashboard.
+                await updateDashboardSummary(); // Atualiza o resumo do dashboard (Líder, GAPE, Período, etc.)
             } catch (e) {
                 console.error("Falha ao enviar presença para o servidor:", e);
                 showMessage("Falha ao enviar presença para o servidor. " + e.message, "error");
@@ -285,6 +296,8 @@ async function getPresencasTotal() {
 
 /**
  * Função para obter e atualizar os dados do card de resumo do dashboard.
+ * Esta função agora foca apenas em Período, Líder e GAPE, pois as Presenças Totais
+ * no Mês são calculadas no frontend com base nos filtros.
  * @returns {Promise<Object>} Um objeto com o total de presenças do mês, período, líder e GAPE.
  */
 async function updateDashboardSummary() { 
@@ -296,13 +309,13 @@ async function updateDashboardSummary() {
         }
         const data = await res.json();
         
-        // Atualiza os elementos HTML do card de resumo.
-        if (dashboardPresencasMesEl) dashboardPresencasMesEl.textContent = data.presencasMes || 0;
+        // Atualiza os elementos HTML do card de resumo (apenas Período, Líder e GAPE).
+        // dashboardPresencasMesEl será atualizado separadamente em displayMembers.
         if (dashboardPeriodoEl) dashboardPeriodoEl.textContent = data.periodo || "N/A";
         if (dashboardLiderEl) dashboardLiderEl.textContent = data.lider || "N/A";
         if (dashboardGapeEl) dashboardGapeEl.textContent = data.gape || "N/A";
 
-        return data; // Retorna os dados para quem chamou (se necessário).
+        return data; 
     } catch (error) {
         console.error("Erro em updateDashboardSummary:", error);
         showMessage("Erro ao carregar resumo do dashboard.", "error");
@@ -317,12 +330,10 @@ async function updateDashboardSummary() {
 function fillSelectOptions() {
     // Extrai líderes únicos e os ordena.
     const lideres = [...new Set(allMembersData.map((m) => m.Lider).filter(Boolean))].sort();
-    // NOVO LOG: Verifique quais líderes foram extraídos
     console.log("fillSelectOptions: Líderes únicos extraídos:", lideres); 
     
     // Extrai GAPEs únicos e os ordena.
     const gapes = [...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean))].sort();
-    // NOVO LOG: Verifique quais GAPEs foram extraídos
     console.log("fillSelectOptions: GAPEs únicos extraídos:", gapes); 
 
     // Popula o select de Líder.
@@ -391,9 +402,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // displayMembers é async e também chamará getPresencasTotal()
             applyFilters(); 
             
-            // 4. Atualiza o card de resumo do dashboard.
-            // Esta chamada é redundante se displayMembers já está chamando,
-            // mas garante que o dashboard seja populado mesmo se não houver membros para displayMembers.
+            // 4. Atualiza o card de resumo do dashboard (Período, Líder, GAPE).
+            // A parte de 'Presenças no Mês' será atualizada dentro de displayMembers.
             await updateDashboardSummary(); 
 
             // Exibe uma mensagem de sucesso ou informação sobre a quantidade de membros.

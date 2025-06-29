@@ -61,34 +61,46 @@
 
         <div id="messageArea" class="message-box hidden" role="alert"></div>
 
-        <div class="dashboard-summary bg-blue-700 text-white rounded-xl shadow-lg p-6 mb-8 mt-6">
-            <h2 class="text-2xl font-bold mb-4 text-center">Resumo do Mês</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                <div>
-                    <span class="block text-sm opacity-75">Presenças no Mês:</span>
-                    <span id="dashboardPresencasMes" class="text-xl font-bold">--</span>
-                </div>
-                <div>
-                    <span class="block text-sm opacity-75">Período:</span>
-                    <span id="dashboardPeriodo" class="text-xl font-bold">--</span>
-                </div>
-                <div>
-                    <span class="block text-sm opacity-75">Líder:</span>
-                    <span id="dashboardLider" class="text-xl font-bold">--</span>
-                </div>
-                <div>
-                    <span class="block text-sm opacity-75">GAPE:</span>
-                    <span id="dashboardGape" class="text-xl font-bold">--</span>
+        <!-- Botão para alternar a visibilidade do Dashboard -->
+        <div class="flex justify-center mb-4">
+            <button id="toggleDashboardBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25a2.25 2.25 0 01-2.25 2.25h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75A2.25 2.25 0 0115.75 13.5H18a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span class="ml-2">Dashboard</span>
+            </button>
+        </div>
+
+        <!-- Container que será animado (inicialmente oculto com max-h-0 e opacity-0) -->
+        <div id="dashboardContainer" class="overflow-hidden transition-all duration-700 ease-in-out max-h-0 opacity-0">
+            <!-- CONTEÚDO ORIGINAL do dashboard-summary agora com id="actualDashboardSummary" -->
+            <div id="actualDashboardSummary" class="dashboard-summary bg-blue-700 text-white rounded-xl shadow-lg p-6 mb-8 mt-6">
+                <h2 class="text-2xl font-bold mb-4 text-center">Resumo do Mês</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <span class="block text-sm opacity-75">Presenças no Mês:</span>
+                        <span id="dashboardPresencasMes" class="text-xl font-bold">--</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm opacity-75">Período:</span>
+                        <span id="dashboardPeriodo" class="text-xl font-bold">--</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm opacity-75">Líder:</span>
+                        <span id="dashboardLider" class="text-xl font-bold">--</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm opacity-75">GAPE:</span>
+                        <span id="dashboardGape" class="text-xl font-bold">--</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="membersCardsContainer" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-            </div>
+        </div>
 
-        
     </div>
 
-    
 </body>
 </html>

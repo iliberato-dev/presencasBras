@@ -349,12 +349,38 @@ async function fetchAndDisplaySummary() {
         console.log("Dados de presenças totais:", dataTotal);
 
         if (dashboardPresencasMes) {
+            // dashboardPresencasMes continua mostrando o total geral do mês do backend.
             dashboardPresencasMes.textContent = dataMes.presencasMes || 0;
         }
         
         if (totalCountsList) {
             totalCountsList.innerHTML = ''; 
-            const sortedCounts = Object.entries(dataTotal).sort(([, countA], [, countB]) => countB - countA); 
+            
+            // Obter os valores dos filtros atuais
+            const currentLiderFilter = filterLiderInput.value.toLowerCase().trim();
+            const currentGapeFilter = filterGapeInput.value.toLowerCase().trim();
+
+            // Filtrar os membros que correspondem aos filtros de Líder e GAPE
+            const membersMatchingLiderAndGape = allMembersData.filter(member => {
+                const memberLider = String(member.Lider || "").toLowerCase();
+                const memberGape = String(member.GAPE || "").toLowerCase();
+
+                const matchesLider = currentLiderFilter === "" || memberLider.includes(currentLiderFilter);
+                const matchesGape = currentGapeFilter === "" || memberGape.includes(currentGapeFilter);
+
+                return matchesLider && matchesGape;
+            }).map(member => member.Nome); // Obter apenas os nomes dos membros filtrados
+
+            // Criar um objeto para armazenar as contagens totais filtradas
+            const filteredTotalCounts = {};
+            for (const memberName in dataTotal) {
+                // Se o membro estiver na lista de membros filtrados (ou se não houver filtros de líder/gape)
+                if (membersMatchingLiderAndGape.includes(memberName) || (currentLiderFilter === "" && currentGapeFilter === "")) {
+                    filteredTotalCounts[memberName] = dataTotal[memberName];
+                }
+            }
+
+            const sortedCounts = Object.entries(filteredTotalCounts).sort(([, countA], [, countB]) => countB - countA); 
 
             if (sortedCounts.length > 0) {
                 sortedCounts.forEach(([name, count]) => {
@@ -366,12 +392,13 @@ async function fetchAndDisplaySummary() {
             } else {
                 const listItem = document.createElement('li');
                 listItem.className = "text-sm text-gray-200 text-center";
-                listItem.textContent = 'Nenhuma presença total registrada.';
+                listItem.textContent = 'Nenhuma presença total registrada para os filtros aplicados.';
                 totalCountsList.appendChild(listItem);
             }
         }
 
-        // --- NOVO: Preencher os campos de Período, Líder e GAPE no dashboard ---
+        // --- Preencher os campos de Período, Líder e GAPE no dashboard ---
+        // Estes campos refletirão os filtros ATUAIS da tabela de membros
         const uniquePeriods = [...new Set(filteredMembers.map(m => m.Periodo).filter(Boolean))];
         const uniqueLiders = [...new Set(filteredMembers.map(m => m.Lider).filter(Boolean))];
         const uniqueGapes = [...new Set(filteredMembers.map(m => m.GAPE).filter(Boolean))];

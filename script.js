@@ -2,8 +2,6 @@
 let allMembersData = [];
 // Membros atualmente exibidos após a aplicação dos filtros
 let filteredMembers = [];
-// Variável para armazenar o líder logado
-let loggedInLeader = null;
 
 // Elementos do DOM
 const filterNameInput = document.getElementById("filterName");
@@ -30,15 +28,6 @@ const dashboardPeriodo = document.getElementById("dashboardPeriodo");
 const dashboardLider = document.getElementById("dashboardLider");     
 const dashboardGape = document.getElementById("dashboardGape");       
 const totalCountsList = document.getElementById("totalCountsList"); // Para a lista de presenças totais por membro
-
-// Elementos da Tela de Login
-const loginScreen = document.getElementById("loginScreen");
-const mainAppContent = document.getElementById("mainAppContent");
-const loginLiderNameInput = document.getElementById("loginLiderName");
-const loginRIInput = document.getElementById("loginRI");
-const loginBtn = document.getElementById("loginBtn");
-const loginMessageArea = document.getElementById("loginMessageArea");
-const loggedInUserDisplay = document.getElementById("loggedInUserDisplay");
 
 /**
  * Exibe/oculta o indicador de carregamento global com uma mensagem.
@@ -95,37 +84,21 @@ function showMessage(message, type = "info") {
 }
 
 /**
- * Exibe uma mensagem específica para a tela de login.
- * @param {string} message - A mensagem a ser exibida.
- * @param {'success'|'error'|'info'} type - O tipo de mensagem (para estilização).
- */
-function showLoginMessage(message, type = "info") {
-    loginMessageArea.textContent = message;
-    loginMessageArea.className = "message-box show";
-    loginMessageArea.classList.remove("hidden");
-
-    loginMessageArea.classList.remove("message-success", "message-error", "bg-blue-100", "text-blue-800");
-    if (type === "success") {
-        loginMessageArea.classList.add("message-success");
-    } else if (type === "error") {
-        loginMessageArea.classList.add("message-error");
-    } else {
-        loginMessageArea.classList.add("bg-blue-100", "text-blue-800");
-    }
-
-    setTimeout(() => {
-        loginMessageArea.classList.remove("show");
-        setTimeout(() => loginMessageArea.classList.add("hidden"), 500);
-    }, 5000);
-}
-
-/**
  * Carrega os dados dos membros.
  * No ambiente real, esta função faria uma requisição ao seu Apps Script implantado.
  */
 async function fetchMembers() {
     showGlobalLoading(true, "Carregando dados dos membros..."); // Mostrar loading global com mensagem específica
-    
+    membersCardsContainer.innerHTML = `
+        <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
+            <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando membros...</span>
+        </div>
+    `;
+
     try {
         const backendUrl = "https://presencasbras.onrender.com/get-membros"; 
 
@@ -139,12 +112,14 @@ async function fetchMembers() {
             allMembersData = data.membros || data.data || [];
             fillSelectOptions(); 
             if (allMembersData.length === 0) {
-                console.warn("Nenhum membro encontrado ou dados vazios do backend.");
+                showMessage("Nenhum membro encontrado ou dados vazios.", "info");
             } else {
-                console.log(`Membros carregados com sucesso! Total: ${allMembersData.length}`);
+                showMessage(
+                    `Membros carregados com sucesso! Total: ${allMembersData.length}`,
+                    "success"
+                );
             }
         } else {
-            // Dados mockados para desenvolvimento se o backendUrl não estiver definido
             allMembersData = [
                 { Nome: "João Silva", Status: "Ativo", Cargo: "Membro", Periodo: "Manhã", RI: "1234", Congregacao: "Sede", Lider: "Líder A", GAPE: "001 - Betel" },
                 { Nome: "Maria Oliveira", Status: "Ativo", Cargo: "Diácono", Periodo: "Noite", RI: "5678", Congregacao: "Sede", Lider: "Líder B", GAPE: "002 - Canaã" },
@@ -154,11 +129,14 @@ async function fetchMembers() {
                 { Nome: "Sara Martins", Status: "Ativo", Cargo: "Evangelista", Periodo: "Manhã", RI: "1122", Congregacao: "Sede", Lider: "Líder C", GAPE: "003 - Gideão" },
             ];
             fillSelectOptions(); 
-            console.log("Dados mockados carregados para demonstração.");
+            showMessage("Dados mockados carregados para demonstração.", "info");
         }
+
+        applyFilters(); 
     } catch (error) {
         console.error("Erro ao carregar membros:", error);
-        showLoginMessage(`Erro ao carregar dados: ${error.message}`, "error");
+        showMessage(`Erro ao carregar membros: ${error.message}`, "error");
+        membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
     } finally {
         showGlobalLoading(false); // Ocultar loading global
     }
@@ -166,13 +144,11 @@ async function fetchMembers() {
 
 /**
  * Aplica os filtros aos dados dos membros e atualiza a tabela.
- * Se um líder estiver logado, o filtro de líder será aplicado automaticamente.
  */
 function applyFilters() {
     const nameFilter = filterNameInput.value.toLowerCase().trim();
     const periodoFilter = filterPeriodoSelect.value.toLowerCase().trim();
-    // O filtro de líder pode ser preenchido automaticamente pelo login
-    const liderFilter = filterLiderInput.value.toLowerCase().trim(); 
+    const liderFilter = filterLiderInput.value.toLowerCase().trim();
     const gapeFilter = filterGapeInput.value.toLowerCase().trim();
 
     filteredMembers = allMembersData.filter((member) => {
@@ -188,10 +164,7 @@ function applyFilters() {
             liderFilter === "" || memberLider.includes(liderFilter);
         const matchesGape = gapeFilter === "" || memberGape.includes(gapeFilter);
 
-        // Se um líder estiver logado, ele só verá membros do seu próprio grupo de líder
-        const matchesLoggedInLeader = loggedInLeader ? memberLider === String(loggedInLeader.Lider || "").toLowerCase() : true;
-
-        return matchesName && matchesPeriodo && matchesLider && matchesGape && matchesLoggedInLeader;
+        return matchesName && matchesPeriodo && matchesLider && matchesGape;
     });
 
     displayMembers(filteredMembers);
@@ -346,10 +319,7 @@ function clearFilters() {
     showMessage("Limpando filtros...", "info");
     filterNameInput.value = "";
     filterPeriodoSelect.value = "";
-    // Não limpa o filtro de líder se houver um líder logado
-    if (!loggedInLeader) {
-        filterLiderInput.value = "";
-    }
+    filterLiderInput.value = "";
     filterGapeInput.value = "";
     applyFilters();
 }
@@ -364,6 +334,14 @@ function applyFiltersWithMessage() {
 async function fetchAndDisplaySummary() {
     showGlobalLoading(true, "Carregando resumo do dashboard..."); // Mensagem específica para o resumo
     try {
+        // Não usamos mais get-presencas-mes diretamente para dashboardPresencasMes
+        // const responseMes = await fetch("https://presencasbras.onrender.com/get-presencas-mes");
+        // if (!responseMes.ok) {
+        //     throw new Error(`Erro ao buscar presenças do mês: ${responseMes.statusText}`);
+        // }
+        // const dataMes = await responseMes.json();
+        // console.log("Dados de presenças do mês:", dataMes);
+
         const responseTotal = await fetch("https://presencasbras.onrender.com/get-presencas-total");
         if (!responseTotal.ok) {
             throw new Error(`Erro ao buscar presenças totais: ${responseTotal.statusText}`);
@@ -491,68 +469,18 @@ function toggleDashboardVisibility() {
     }
 }
 
-// --- FUNÇÃO DE LOGIN ---
-async function handleLogin() {
-    const leaderName = loginLiderNameInput.value.trim();
-    const ri = loginRIInput.value.trim();
-
-    if (!leaderName || !ri) {
-        showLoginMessage("Por favor, preencha todos os campos de login.", "error");
-        return;
-    }
-
-    // Procura pelo líder nos dados carregados
-    const foundLeader = allMembersData.find(member => 
-        String(member.Lider || "").toLowerCase() === leaderName.toLowerCase() &&
-        String(member.RI || "").toLowerCase() === ri.toLowerCase()
-    );
-
-    if (foundLeader) {
-        loggedInLeader = foundLeader; // Armazena o objeto do líder logado
-        showLoginMessage(`Bem-vindo(a), ${loggedInLeader.Nome}!`, "success");
-        
-        // Esconde a tela de login e mostra o conteúdo principal
-        loginScreen.classList.add("hidden");
-        mainAppContent.classList.remove("hidden");
-
-        // Exibe o nome do líder logado na tela principal
-        loggedInUserDisplay.textContent = `Líder Logado: ${loggedInLeader.Nome}`;
-
-        // Aplica o filtro de líder automaticamente
-        filterLiderInput.value = loggedInLeader.Lider;
-        filterLiderInput.disabled = true; // Desabilita o filtro para que o líder não possa alterá-lo
-
-        // Aplica os filtros e carrega o resumo
-        applyFilters();
-        fetchAndDisplaySummary();
-
-    } else {
-        showLoginMessage("Nome do Líder ou RI incorretos. Tente novamente.", "error");
-    }
-}
-
-// --- INICIALIZAÇÃO DA APLICAÇÃO ---
-async function initApp() {
-    // Primeiro, carrega todos os dados dos membros
-    await fetchMembers();
-    // Em seguida, mostra a tela de login
-    loginScreen.classList.remove("hidden");
-    mainAppContent.classList.add("hidden"); // Garante que o conteúdo principal esteja oculto
-}
-
 // Event Listeners
 applyFiltersBtn.addEventListener("click", applyFiltersWithMessage);
 document.getElementById("clearFiltersBtn").addEventListener("click", clearFilters);
-loginBtn.addEventListener("click", handleLogin); // Event listener para o botão de login
 
 filterNameInput.addEventListener("input", applyFilters);
 filterPeriodoSelect.addEventListener("change", applyFilters);
-// filterLiderInput.addEventListener("input", applyFilters); // Removido, pois será controlado pelo login
+filterLiderInput.addEventListener("input", applyFilters);
 filterGapeInput.addEventListener("input", applyFilters);
 
 if (toggleDashboardBtn) {
     toggleDashboardBtn.addEventListener("click", toggleDashboardVisibility);
 }
 
-// Inicia a aplicação ao carregar a janela
-window.onload = initApp;
+// Carrega os membros ao iniciar o aplicativo
+window.onload = fetchMembers;

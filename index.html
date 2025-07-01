@@ -61,13 +61,14 @@
 
         <!-- NOVO: Loading indicator global com texto dinâmico -->
         <!-- Alterado bg-white bg-opacity-80 para bg-red-500 bg-opacity-90 e adicionado borda para depuração -->
-        <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-red-500 bg-opacity-90 z-50 hidden border-4 border-yellow-400">
+        <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-red-500 z-50 hidden border-4 border-yellow-400">
             <div class="flex flex-col items-center">
                 <svg class="animate-spin h-10 w-10 text-blue-700 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                 </svg>
-                <span id="loadingMessage" class="text-white text-lg font-semibold">Carregando...</span>
+                <!-- Adicionado estilo inline para forçar opacidade e cor do texto -->
+                <span id="loadingMessage" class="text-white text-lg font-semibold" style="opacity: 1 !important; color: white !important;">Carregando...</span>
             </div>
         </div>
 

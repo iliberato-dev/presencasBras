@@ -334,12 +334,13 @@ function applyFiltersWithMessage() {
 async function fetchAndDisplaySummary() {
     showGlobalLoading(true, "Carregando resumo do dashboard..."); // Mensagem específica para o resumo
     try {
-        const responseMes = await fetch("https://presencasbras.onrender.com/get-presencas-mes");
-        if (!responseMes.ok) {
-            throw new Error(`Erro ao buscar presenças do mês: ${responseMes.statusText}`);
-        }
-        const dataMes = await responseMes.json();
-        console.log("Dados de presenças do mês:", dataMes);
+        // Não usamos mais get-presencas-mes diretamente para dashboardPresencasMes
+        // const responseMes = await fetch("https://presencasbras.onrender.com/get-presencas-mes");
+        // if (!responseMes.ok) {
+        //     throw new Error(`Erro ao buscar presenças do mês: ${responseMes.statusText}`);
+        // }
+        // const dataMes = await responseMes.json();
+        // console.log("Dados de presenças do mês:", dataMes);
 
         const responseTotal = await fetch("https://presencasbras.onrender.com/get-presencas-total");
         if (!responseTotal.ok) {
@@ -348,38 +349,40 @@ async function fetchAndDisplaySummary() {
         const dataTotal = await responseTotal.json();
         console.log("Dados de presenças totais:", dataTotal);
 
+        // Obter os valores dos filtros atuais
+        const currentLiderFilter = filterLiderInput.value.toLowerCase().trim();
+        const currentGapeFilter = filterGapeInput.value.toLowerCase().trim();
+
+        // Filtrar os membros que correspondem aos filtros de Líder e GAPE
+        const membersMatchingLiderAndGape = allMembersData.filter(member => {
+            const memberLider = String(member.Lider || "").toLowerCase();
+            const memberGape = String(member.GAPE || "").toLowerCase();
+
+            const matchesLider = currentLiderFilter === "" || memberLider.includes(currentLiderFilter);
+            const matchesGape = currentGapeFilter === "" || memberGape.includes(currentGapeFilter);
+
+            return matchesLider && matchesGape;
+        }).map(member => member.Nome); // Obter apenas os nomes dos membros filtrados
+
+        // Criar um objeto para armazenar as contagens totais filtradas
+        const filteredTotalCounts = {};
+        for (const memberName in dataTotal) {
+            // Se o membro estiver na lista de membros filtrados (ou se não houver filtros de líder/gape)
+            if (membersMatchingLiderAndGape.includes(memberName) || (currentLiderFilter === "" && currentGapeFilter === "")) {
+                filteredTotalCounts[memberName] = dataTotal[memberName];
+            }
+        }
+
+        // Calcular a soma total das presenças dos membros filtrados
+        const totalFilteredPresences = Object.values(filteredTotalCounts).reduce((sum, count) => sum + count, 0);
+
         if (dashboardPresencasMes) {
-            // dashboardPresencasMes continua mostrando o total geral do mês do backend.
-            dashboardPresencasMes.textContent = dataMes.presencasMes || 0;
+            // dashboardPresencasMes agora mostra a soma das presenças totais dos membros filtrados
+            dashboardPresencasMes.textContent = totalFilteredPresences;
         }
         
         if (totalCountsList) {
             totalCountsList.innerHTML = ''; 
-            
-            // Obter os valores dos filtros atuais
-            const currentLiderFilter = filterLiderInput.value.toLowerCase().trim();
-            const currentGapeFilter = filterGapeInput.value.toLowerCase().trim();
-
-            // Filtrar os membros que correspondem aos filtros de Líder e GAPE
-            const membersMatchingLiderAndGape = allMembersData.filter(member => {
-                const memberLider = String(member.Lider || "").toLowerCase();
-                const memberGape = String(member.GAPE || "").toLowerCase();
-
-                const matchesLider = currentLiderFilter === "" || memberLider.includes(currentLiderFilter);
-                const matchesGape = currentGapeFilter === "" || memberGape.includes(currentGapeFilter);
-
-                return matchesLider && matchesGape;
-            }).map(member => member.Nome); // Obter apenas os nomes dos membros filtrados
-
-            // Criar um objeto para armazenar as contagens totais filtradas
-            const filteredTotalCounts = {};
-            for (const memberName in dataTotal) {
-                // Se o membro estiver na lista de membros filtrados (ou se não houver filtros de líder/gape)
-                if (membersMatchingLiderAndGape.includes(memberName) || (currentLiderFilter === "" && currentGapeFilter === "")) {
-                    filteredTotalCounts[memberName] = dataTotal[memberName];
-                }
-            }
-
             const sortedCounts = Object.entries(filteredTotalCounts).sort(([, countA], [, countB]) => countB - countA); 
 
             if (sortedCounts.length > 0) {

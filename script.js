@@ -38,22 +38,17 @@ function showGlobalLoading(show, message = "Carregando...") {
     if (globalLoadingIndicator && loadingMessageSpan) {
         loadingMessageSpan.textContent = message; // Atualiza o texto da mensagem
         if (show) {
-            globalLoadingIndicator.classList.remove("hidden");
-            // Força a exibição e opacidade para garantir que apareça
-            globalLoadingIndicator.style.display = "flex"; // Garante que o layout flexbox seja aplicado
-            globalLoadingIndicator.style.opacity = "1"; // Garante que a opacidade seja 1
+            globalLoadingIndicator.style.display = "flex"; // Garante que o elemento esteja no fluxo para transição
+            globalLoadingIndicator.classList.add("show"); // Adiciona a classe 'show' para opacidade: 1
             console.log(`Loading indicator: SHOWING with message: "${message}"`);
         } else {
-            // Adiciona um atraso para fins de depuração. REMOVA ISSO EM PRODUÇÃO.
-            // Para uma transição suave, primeiro definimos a opacidade para 0,
-            // e só depois de um pequeno atraso (para a transição ocorrer), escondemos o display.
-            globalLoadingIndicator.style.opacity = "0"; 
+            globalLoadingIndicator.classList.remove("show"); // Remove a classe 'show' para opacidade: 0
             console.log(`Loading indicator: HIDING (starting fade-out)`);
+            // Após a transição de opacidade, define display: none para remover do fluxo
             setTimeout(() => {
-                globalLoadingIndicator.classList.add("hidden");
-                globalLoadingIndicator.style.display = "none"; // Esconde o elemento completamente
+                globalLoadingIndicator.style.display = "none";
                 console.log(`Loading indicator: HIDDEN (display: none)`);
-            }, 1500); // Atraso de 1.5 segundos para você ver o loading e a transição
+            }, 300); // Deve corresponder à duração da transição de opacidade no CSS (0.3s)
         }
     } else {
         console.warn("Loading indicator elements not found!");
@@ -143,7 +138,7 @@ async function fetchMembers() {
         showMessage(`Erro ao carregar membros: ${error.message}`, "error");
         membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
     } finally {
-        showGlobalLoading(false); // Ocultar loading global (com atraso para depuração)
+        showGlobalLoading(false); // Ocultar loading global
     }
 }
 
@@ -288,7 +283,7 @@ function displayMembers(members) {
                 checkbox.disabled = false;
             } finally {
                 confirmBtn.classList.add("hidden"); 
-                showGlobalLoading(false); // Ocultar loading (com atraso para depuração)
+                showGlobalLoading(false); // Ocultar loading global
             }
         });
     });
@@ -382,7 +377,7 @@ async function fetchAndDisplaySummary() {
         console.error("Erro ao carregar o resumo:", error);
         showMessage(`Erro ao carregar o resumo: ${error.message}`, "error");
     } finally {
-        showGlobalLoading(false); // Ocultar loading (com atraso para depuração)
+        showGlobalLoading(false); // Ocultar loading global
     }
 }
 

@@ -60,13 +60,14 @@
         </div>
 
         <!-- NOVO: Loading indicator global com texto dinâmico -->
-        <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50 hidden">
+        <!-- Alterado bg-white bg-opacity-80 para bg-red-500 bg-opacity-90 e adicionado borda para depuração -->
+        <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-red-500 bg-opacity-90 z-50 hidden border-4 border-yellow-400">
             <div class="flex flex-col items-center">
                 <svg class="animate-spin h-10 w-10 text-blue-700 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                 </svg>
-                <span id="loadingMessage" class="text-blue-700 text-lg font-semibold">Carregando...</span>
+                <span id="loadingMessage" class="text-white text-lg font-semibold">Carregando...</span>
             </div>
         </div>
 
@@ -399,6 +400,11 @@
             z-index: 9999; /* Garante que ele esteja acima de tudo */
             background-color: rgba(255, 255, 255, 0.9); /* Um pouco mais opaco */
             transition: opacity 0.3s ease-in-out; /* Transição suave para o fade */
+            /* Propriedades de posicionamento fixo explícitas */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
     </style>
 </body>

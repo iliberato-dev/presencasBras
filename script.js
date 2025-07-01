@@ -39,13 +39,9 @@ function showGlobalLoading(show, message = "Carregando...") {
         loadingMessageSpan.textContent = message; // Atualiza o texto da mensagem
         if (show) {
             globalLoadingIndicator.classList.remove("hidden");
-            // Força a exibição e opacidade para garantir que apareça
-            globalLoadingIndicator.style.display = "flex";
-            globalLoadingIndicator.style.opacity = "1";
-            console.log(`Loading indicator: SHOWING with message: "${message}"`);
-        } 
-    } else {
-        console.warn("Loading indicator elements not found!");
+        } else {
+            globalLoadingIndicator.classList.add("hidden");
+        }
     }
 }
 
@@ -132,7 +128,7 @@ async function fetchMembers() {
         showMessage(`Erro ao carregar membros: ${error.message}`, "error");
         membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
     } finally {
-        showGlobalLoading(false); // Ocultar loading global (com atraso para depuração)
+        showGlobalLoading(false); 
     }
 }
 
@@ -277,7 +273,7 @@ function displayMembers(members) {
                 checkbox.disabled = false;
             } finally {
                 confirmBtn.classList.add("hidden"); 
-                showGlobalLoading(false); // Ocultar loading (com atraso para depuração)
+                showGlobalLoading(false); 
             }
         });
     });
@@ -371,7 +367,7 @@ async function fetchAndDisplaySummary() {
         console.error("Erro ao carregar o resumo:", error);
         showMessage(`Erro ao carregar o resumo: ${error.message}`, "error");
     } finally {
-        showGlobalLoading(false); // Ocultar loading (com atraso para depuração)
+        showGlobalLoading(false); 
     }
 }
 

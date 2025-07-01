@@ -371,6 +371,42 @@ async function fetchAndDisplaySummary() {
             }
         }
 
+        // --- NOVO: Preencher os campos de Período, Líder e GAPE no dashboard ---
+        const uniquePeriods = [...new Set(filteredMembers.map(m => m.Periodo).filter(Boolean))];
+        const uniqueLiders = [...new Set(filteredMembers.map(m => m.Lider).filter(Boolean))];
+        const uniqueGapes = [...new Set(filteredMembers.map(m => m.GAPE).filter(Boolean))];
+
+        if (dashboardPeriodo) {
+            if (uniquePeriods.length === 0) {
+                dashboardPeriodo.textContent = "N/A";
+            } else if (uniquePeriods.length === 1) {
+                dashboardPeriodo.textContent = uniquePeriods[0];
+            } else {
+                dashboardPeriodo.textContent = "Vários";
+            }
+        }
+
+        if (dashboardLider) {
+            if (uniqueLiders.length === 0) {
+                dashboardLider.textContent = "N/A";
+            } else if (uniqueLiders.length === 1) {
+                dashboardLider.textContent = uniqueLiders[0];
+            } else {
+                dashboardLider.textContent = "Vários";
+            }
+        }
+
+        if (dashboardGape) {
+            if (uniqueGapes.length === 0) {
+                dashboardGape.textContent = "N/A";
+            } else if (uniqueGapes.length === 1) {
+                dashboardGape.textContent = uniqueGapes[0];
+            } else {
+                dashboardGape.textContent = "Vários";
+            }
+        }
+        // --- FIM: Preenchimento dos campos do dashboard ---
+
         showMessage("Resumo carregado com sucesso!", "success");
 
     } catch (error) {

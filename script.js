@@ -54,9 +54,9 @@ async function fetchMembers() {
             `;
 
   try {
+      //AKfycbz8Y5Q18jwAqJ9JY-ruay9TrgQIDNoMBWQqK-OJ2kvAnrljZotJEbEmk-VMgyU8-9VT0A
     // --- ATENÇÃO: Substitua a URL abaixo pela URL de implantação do seu Apps Script ---
-    const appsScriptUrl =
-      "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLh6Ji04QgkX6sMQVSgqxEG4V6K9Dr9p--hBqGxVz2t0G0vZYfeBFhPXSZuPu_F5hNOAmaLdb1pEh5Y0EkkqmjhlfcSzEruKe4uRk0jxpHOMUhjpYjVqfQ3fTfmePTaLlG3o8mMCjfnpNLDFHkPldCB2o8WBzRJSN2h3v1Hqm4cfVvGWDbJT_4fUsFzS4Ck7UrkVEMqGHpd1VzMXtIzb2Q10bJ_f2hmIXCsEJYMUv9x65Nvh6ohqlbHBziq8c6vqyAj4h3osJkQib8EzDPYDkDLh5Mt-Ug&lib=MNOzUMDSZklwVXJnUkxjSACUCrVfXa6eb";
+    const appsScriptUrl = "https://presencasbras.onrender.com";
 
     let data;
     if (appsScriptUrl) {
@@ -250,7 +250,7 @@ function displayMembers(members) {
       checkbox.disabled = true;
       try {
         await fetch(
-          "http://localhost:3000/presenca",
+          "https://presencasbras.onrender.com/presenca",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

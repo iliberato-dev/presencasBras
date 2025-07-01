@@ -11,7 +11,8 @@ const filterGapeInput = document.getElementById("filterGape");
 const applyFiltersBtn = document.getElementById("applyFiltersBtn");
 const membersCardsContainer = document.getElementById("membersCardsContainer");
 const messageArea = document.getElementById("messageArea");
-const globalLoadingIndicator = document.getElementById("globalLoadingIndicator"); // Novo: para o indicador de carregamento global
+const globalLoadingIndicator = document.getElementById("globalLoadingIndicator"); // Para o indicador de carregamento global
+const loadingMessageSpan = document.getElementById("loadingMessage"); // Para o texto do loading
 
 // Elementos do Dashboard/Resumo
 const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
@@ -23,17 +24,19 @@ const dashboardCloseText = document.getElementById("dashboardCloseText");
 
 // Elementos para exibir os dados do resumo
 const dashboardPresencasMes = document.getElementById("dashboardPresencasMes");
-const dashboardPeriodo = document.getElementById("dashboardPeriodo"); // Mantido, mas não preenchido por get-presencas-mes/total
-const dashboardLider = document.getElementById("dashboardLider");     // Mantido, mas não preenchido por get-presencas-mes/total
-const dashboardGape = document.getElementById("dashboardGape");       // Mantido, mas não preenchido por get-presencas-mes/total
-const totalCountsList = document.getElementById("totalCountsList"); // NOVO: para a lista de presenças totais por membro
+const dashboardPeriodo = document.getElementById("dashboardPeriodo"); 
+const dashboardLider = document.getElementById("dashboardLider");     
+const dashboardGape = document.getElementById("dashboardGape");       
+const totalCountsList = document.getElementById("totalCountsList"); // Para a lista de presenças totais por membro
 
 /**
- * Exibe/oculta o indicador de carregamento global.
+ * Exibe/oculta o indicador de carregamento global com uma mensagem.
  * @param {boolean} show - true para mostrar, false para ocultar.
+ * @param {string} message - A mensagem a ser exibida no loading.
  */
-function showGlobalLoading(show) {
-    if (globalLoadingIndicator) {
+function showGlobalLoading(show, message = "Carregando...") {
+    if (globalLoadingIndicator && loadingMessageSpan) {
+        loadingMessageSpan.textContent = message; // Atualiza o texto da mensagem
         if (show) {
             globalLoadingIndicator.classList.remove("hidden");
         } else {
@@ -75,25 +78,21 @@ function showMessage(message, type = "info") {
  * No ambiente real, esta função faria uma requisição ao seu Apps Script implantado.
  */
 async function fetchMembers() {
-    showGlobalLoading(true); // Mostrar loading global
+    showGlobalLoading(true, "Carregando dados dos membros..."); // Mostrar loading global com mensagem específica
     membersCardsContainer.innerHTML = `
         <div class="col-span-full flex flex-col justify-center items-center py-8 gap-3">
             <svg class="animate-spin h-8 w-8 text-blue-700 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
-            <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando dados dos membros...</span>
+            <span class="text-blue-700 text-lg font-semibold animate-pulse">Carregando membros...</span>
         </div>
     `;
 
     try {
-        // --- ATENÇÃO: Substitua a URL abaixo pela URL de implantação do seu Apps Script ---
-        // Esta URL deve ser a do seu backend Node.js, que por sua vez se conecta ao Apps Script
         const backendUrl = "https://presencasbras.onrender.com/get-membros"; 
 
         let data;
-        // Se você quiser usar dados mockados para desenvolvimento, descomente o else
-        // e comente o bloco if (backendUrl)
         if (backendUrl) {
             const response = await fetch(backendUrl);
             if (!response.ok) {
@@ -101,7 +100,7 @@ async function fetchMembers() {
             }
             data = await response.json();
             allMembersData = data.membros || data.data || [];
-            fillSelectOptions(); // Preenche selects após carregar dados
+            fillSelectOptions(); 
             if (allMembersData.length === 0) {
                 showMessage("Nenhum membro encontrado ou dados vazios.", "info");
             } else {
@@ -111,7 +110,6 @@ async function fetchMembers() {
                 );
             }
         } else {
-            // Dados mockados para desenvolvimento
             allMembersData = [
                 { Nome: "João Silva", Status: "Ativo", Cargo: "Membro", Periodo: "Manhã", RI: "1234", Congregacao: "Sede", Lider: "Líder A", GAPE: "001 - Betel" },
                 { Nome: "Maria Oliveira", Status: "Ativo", Cargo: "Diácono", Periodo: "Noite", RI: "5678", Congregacao: "Sede", Lider: "Líder B", GAPE: "002 - Canaã" },
@@ -120,17 +118,17 @@ async function fetchMembers() {
                 { Nome: "Lucas Pereira", Status: "Ativo", Cargo: "Membro", Periodo: "Noite", RI: "7890", Congregacao: "Sede", Lider: "Líder B", GAPE: "002 - Canaã" },
                 { Nome: "Sara Martins", Status: "Ativo", Cargo: "Evangelista", Periodo: "Manhã", RI: "1122", Congregacao: "Sede", Lider: "Líder C", GAPE: "003 - Gideão" },
             ];
-            fillSelectOptions(); // Preenche selects após carregar dados mockados
+            fillSelectOptions(); 
             showMessage("Dados mockados carregados para demonstração.", "info");
         }
 
-        applyFilters(); // Aplica os filtros iniciais (todos os membros)
+        applyFilters(); 
     } catch (error) {
         console.error("Erro ao carregar membros:", error);
         showMessage(`Erro ao carregar membros: ${error.message}`, "error");
         membersCardsContainer.innerHTML = `<div class="col-span-full text-center py-4 text-red-600">Falha ao carregar dados dos membros. Verifique o console para detalhes.</div>`;
     } finally {
-        showGlobalLoading(false); // Esconder loading global
+        showGlobalLoading(false); 
     }
 }
 
@@ -149,7 +147,6 @@ function applyFilters() {
         const memberLider = String(member.Lider || "").toLowerCase();
         const memberGape = String(member.GAPE || "").toLowerCase();
 
-        // Aplica todos os filtros cumulativamente
         const matchesName = nameFilter === "" || memberName.includes(nameFilter);
         const matchesPeriodo =
             periodoFilter === "" || memberPeriodo.includes(periodoFilter);
@@ -165,7 +162,6 @@ function applyFilters() {
 
 /**
  * Exibe os membros na tela como cards, cada um com seu checkbox de presença.
- * Agora, ao marcar o checkbox, registra a presença com data e hora.
  */
 function displayMembers(members) {
     const container = document.getElementById("membersCardsContainer");
@@ -206,10 +202,9 @@ function displayMembers(members) {
         `;
         container.appendChild(card);
 
-        // Adiciona evento para marcar presença individual
         const checkbox = card.querySelector(".presence-checkbox");
         const infoDiv = card.querySelector(".presence-info");
-        const confirmBtn = card.querySelector(".btn-confirm-presence"); // Seleciona pelo nome da classe
+        const confirmBtn = card.querySelector(".btn-confirm-presence");
         
         checkbox.addEventListener("change", function () {
             if (this.checked) {
@@ -222,7 +217,7 @@ function displayMembers(members) {
         });
 
         confirmBtn.addEventListener("click", async function () {
-            showGlobalLoading(true); // Mostrar loading
+            showGlobalLoading(true, `Registrando presença para ${member.Nome}...`); // Mensagem específica para registro
             const now = new Date();
             const dia = String(now.getDate()).padStart(2, "0");
             const mes = String(now.getMonth() + 1).padStart(2, "0");
@@ -234,13 +229,13 @@ function displayMembers(members) {
             
             infoDiv.textContent = `Registrando...`;
             infoDiv.classList.remove("hidden", "text-green-700");
-            infoDiv.classList.add("text-blue-700"); // Mudar cor para indicar "registrando"
-            confirmBtn.disabled = true; // Desabilita o botão para evitar cliques múltiplos
-            checkbox.disabled = true; // Desabilita o checkbox após clicar em confirmar
+            infoDiv.classList.add("text-blue-700"); 
+            confirmBtn.disabled = true; 
+            checkbox.disabled = true; 
 
             try {
                 const response = await fetch(
-                    "https://presencasbras.onrender.com/presenca", // URL do seu backend intermediário
+                    "https://presencasbras.onrender.com/presenca", 
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -248,12 +243,12 @@ function displayMembers(members) {
                             nome: member.Nome,
                             data: `${dia}/${mes}/${ano}`,
                             hora: `${hora}:${min}:${seg}`,
-                            sheet: "PRESENCAS", // Este 'sheet' pode ser ignorado pelo Apps Script se ele já sabe onde escrever
+                            sheet: "PRESENCAS", 
                         }),
                     }
                 );
 
-                const responseData = await response.json(); // Tenta parsear JSON
+                const responseData = await response.json();
                 
                 if (response.ok) {
                     infoDiv.textContent = `Presença marcada em ${dataHora}`;
@@ -261,12 +256,10 @@ function displayMembers(members) {
                     infoDiv.classList.add("text-green-700");
                     showMessage("Presença registrada com sucesso!", "success");
                 } else {
-                    // Se a resposta não for OK, exibe o erro do servidor
                     infoDiv.textContent = `Erro: ${responseData.details || responseData.message || "Falha ao registrar"}`;
                     infoDiv.classList.remove("text-blue-700", "text-green-700");
                     infoDiv.classList.add("text-red-600");
                     showMessage(`Erro ao registrar presença: ${responseData.details || responseData.message || "Erro desconhecido"}`, "error");
-                    // Re-habilita o botão e checkbox se houver erro para permitir nova tentativa
                     confirmBtn.disabled = false;
                     checkbox.disabled = false;
                 }
@@ -276,30 +269,25 @@ function displayMembers(members) {
                 infoDiv.classList.remove("text-blue-700", "text-green-700");
                 infoDiv.classList.add("text-red-600");
                 showMessage("Falha ao enviar presença para o servidor. Verifique sua conexão.", "error");
-                // Re-habilita o botão e checkbox se houver erro para permitir nova tentativa
                 confirmBtn.disabled = false;
                 checkbox.disabled = false;
             } finally {
-                confirmBtn.classList.add("hidden"); // Oculta o botão de confirmar após a tentativa
-                showGlobalLoading(false); // Esconder loading
+                confirmBtn.classList.add("hidden"); 
+                showGlobalLoading(false); 
             }
         });
     });
 }
 
 /**
- * Simula a marcação de presença e envia os dados (seria para o Apps Script doPost).
- * NOTA: Esta função não é mais usada para marcação individual, que agora é feita por card.
- * Mantenha-a se tiver um botão "Marcar Todos" ou similar.
+ * Simula a marcação de presença e envia os dados.
  */
 async function markAttendance() {
-    // Lógica antiga, pode ser removida se não houver um botão "Marcar Todos"
     showMessage("Esta função é para demonstração e não é mais usada para marcação individual.", "info");
 }
 
 // Função para preencher selects de Líder e GAPE dinamicamente
 function fillSelectOptions() {
-    // Extrai valores únicos de Líder e GAPE dos dados
     const lideres = [
         ...new Set(allMembersData.map((m) => m.Lider).filter(Boolean)),
     ].sort();
@@ -307,12 +295,10 @@ function fillSelectOptions() {
         ...new Set(allMembersData.map((m) => m.GAPE).filter(Boolean)),
     ].sort();
 
-    // Preenche o select de Líder
     filterLiderInput.innerHTML =
         '<option value="">Todos</option>' +
         lideres.map((l) => `<option value="${l}">${l}</option>`).join("");
 
-    // Preenche o select de GAPE
     filterGapeInput.innerHTML =
         '<option value="">Todos</option>' +
         gapes.map((g) => `<option value="${g}">${g}</option>`).join("");
@@ -336,10 +322,8 @@ function applyFiltersWithMessage() {
 
 // --- FUNÇÃO PARA CARREGAR E EXIBIR O RESUMO DO DASHBOARD ---
 async function fetchAndDisplaySummary() {
-    showGlobalLoading(true); // Mostrar loading global
-    showMessage("Carregando resumo das presenças...", "info");
+    showGlobalLoading(true, "Carregando resumo do dashboard..."); // Mensagem específica para o resumo
     try {
-        // --- Requisição para Presenças do Mês ---
         const responseMes = await fetch("https://presencasbras.onrender.com/get-presencas-mes");
         if (!responseMes.ok) {
             throw new Error(`Erro ao buscar presenças do mês: ${responseMes.statusText}`);
@@ -347,7 +331,6 @@ async function fetchAndDisplaySummary() {
         const dataMes = await responseMes.json();
         console.log("Dados de presenças do mês:", dataMes);
 
-        // --- Requisição para Presenças Totais (por pessoa) ---
         const responseTotal = await fetch("https://presencasbras.onrender.com/get-presencas-total");
         if (!responseTotal.ok) {
             throw new Error(`Erro ao buscar presenças totais: ${responseTotal.statusText}`);
@@ -355,28 +338,18 @@ async function fetchAndDisplaySummary() {
         const dataTotal = await responseTotal.json();
         console.log("Dados de presenças totais:", dataTotal);
 
-        // --- Atualizar o HTML com os dados ---
         if (dashboardPresencasMes) {
             dashboardPresencasMes.textContent = dataMes.presencasMes || 0;
         }
-        // Os campos 'Período', 'Líder', 'GAPE' no seu dashboard HTML
-        // não são preenchidos automaticamente por 'presencasMes' ou 'presencasTotal'.
-        // Se você quiser preencher com o período/líder/gape do *usuário atual* ou
-        // um resumo por *esses filtros*, a lógica precisa ser mais complexa
-        // ou você precisaria de rotas GET adicionais no Apps Script.
-        // Por enquanto, eles permanecerão como '--' a menos que você adicione lógica para eles.
-        // if (dashboardPeriodo) dashboardPeriodo.textContent = dataMes.periodo || "--"; // Exemplo se o Apps Script retornasse
-        // if (dashboardLider) dashboardLider.textContent = dataMes.lider || "--";
-        // if (dashboardGape) dashboardGape.textContent = dataMes.gape || "--";
-
+        
         if (totalCountsList) {
-            totalCountsList.innerHTML = ''; // Limpa a lista antes de adicionar novos itens
-            const sortedCounts = Object.entries(dataTotal).sort(([, countA], [, countB]) => countB - countA); // Ordena decrescentemente por contagem
+            totalCountsList.innerHTML = ''; 
+            const sortedCounts = Object.entries(dataTotal).sort(([, countA], [, countB]) => countB - countA); 
 
             if (sortedCounts.length > 0) {
                 sortedCounts.forEach(([name, count]) => {
                     const listItem = document.createElement('li');
-                    listItem.className = "text-sm text-gray-100"; // Tailwind classes for styling list items
+                    listItem.className = "text-sm text-gray-100"; 
                     listItem.innerHTML = `<span class="font-semibold">${name}:</span> ${count} presenças`;
                     totalCountsList.appendChild(listItem);
                 });
@@ -394,7 +367,7 @@ async function fetchAndDisplaySummary() {
         console.error("Erro ao carregar o resumo:", error);
         showMessage(`Erro ao carregar o resumo: ${error.message}`, "error");
     } finally {
-        showGlobalLoading(false); // Esconder loading global
+        showGlobalLoading(false); 
     }
 }
 
@@ -403,7 +376,6 @@ function toggleDashboardVisibility() {
     const isDashboardVisible = dashboardContainer.classList.contains("max-h-screen");
 
     if (isDashboardVisible) {
-        // Ocultar Dashboard
         dashboardContainer.classList.remove("max-h-screen", "opacity-100");
         dashboardContainer.classList.add("max-h-0", "opacity-0");
         dashboardOpenIcon.classList.remove("hidden");
@@ -411,8 +383,7 @@ function toggleDashboardVisibility() {
         dashboardCloseIcon.classList.add("hidden");
         dashboardCloseText.classList.add("hidden");
     } else {
-        // Exibir Dashboard
-        fetchAndDisplaySummary(); // Chamar a função para buscar e exibir os dados
+        fetchAndDisplaySummary(); 
         dashboardContainer.classList.remove("max-h-0", "opacity-0");
         dashboardContainer.classList.add("max-h-screen", "opacity-100");
         dashboardOpenIcon.classList.add("hidden");
@@ -426,13 +397,11 @@ function toggleDashboardVisibility() {
 applyFiltersBtn.addEventListener("click", applyFiltersWithMessage);
 document.getElementById("clearFiltersBtn").addEventListener("click", clearFilters);
 
-// Aplica filtros ao digitar/mudar seleção para uma experiência mais dinâmica
 filterNameInput.addEventListener("input", applyFilters);
 filterPeriodoSelect.addEventListener("change", applyFilters);
 filterLiderInput.addEventListener("input", applyFilters);
 filterGapeInput.addEventListener("input", applyFilters);
 
-// Event Listener para o botão de alternar o Dashboard
 if (toggleDashboardBtn) {
     toggleDashboardBtn.addEventListener("click", toggleDashboardVisibility);
 }

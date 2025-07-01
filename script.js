@@ -43,16 +43,7 @@ function showGlobalLoading(show, message = "Carregando...") {
             globalLoadingIndicator.style.display = "flex";
             globalLoadingIndicator.style.opacity = "1";
             console.log(`Loading indicator: SHOWING with message: "${message}"`);
-        } else {
-            // Adiciona um atraso para fins de depuração. REMOVA ISSO EM PRODUÇÃO.
-            setTimeout(() => {
-                globalLoadingIndicator.classList.add("hidden");
-                // Força a ocultação
-                globalLoadingIndicator.style.display = "none";
-                globalLoadingIndicator.style.opacity = "0";
-                console.log(`Loading indicator: HIDING (after delay)`);
-            }, 1500); // Atraso de 1.5 segundos para você ver o loading
-        }
+        } 
     } else {
         console.warn("Loading indicator elements not found!");
     }

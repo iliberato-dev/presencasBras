@@ -264,13 +264,23 @@ body {
     right: 0;
     bottom: 0;
     z-index: 9999; /* Garante que ele esteja acima de tudo */
-    opacity: 1 !important; /* Forçando opacidade para o contêiner */
-    transition: opacity 0.3s ease-in-out; /* Adiciona transição suave */
+    background: rgba(255, 255, 255, 0.8); /* Fundo branco transparente */
+    display: flex; /* Sempre flex para centralizar o conteúdo */
+    align-items: center;
+    justify-content: center;
+    opacity: 0; /* Inicia invisível */
+    pointer-events: none; /* Não interage com o mouse quando invisível */
+    transition: opacity 0.3s ease-in-out; /* Transição suave de opacidade */
+}
+
+/* Adiciona a classe 'show' para tornar o indicador visível */
+#globalLoadingIndicator.show {
+    opacity: 1;
+    pointer-events: auto; /* Permite interagir com o mouse quando visível (se houver algo clicável) */
 }
 
 /* Forçando opacidade e cor do texto do loading */
 #loadingMessage {
-    opacity: 1 !important;
     color: #3b82f6 !important; /* Texto azul */
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), 0 0 1em rgba(0, 0, 0, 0.3), 0 0 0.2em rgba(0, 0, 0, 0.2); /* Sombra para contraste */
 }

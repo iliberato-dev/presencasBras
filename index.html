@@ -10,27 +10,27 @@
     
     <link rel="stylesheet" href="style.css">
 
-    <script src="script.js" defer></script>
+    <!-- O script.js será carregado após o HTML, garantindo que os elementos existam -->
+    <script src="script.js" defer></script> 
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="main-card p-6 md:p-8 w-full max-w-4xl fade-in">
+<body class="min-h-screen flex items-center justify-center p-4 font-inter bg-gray-100">
+    <div class="main-card p-6 md:p-8 w-full max-w-4xl fade-in bg-white rounded-xl shadow-lg">
         <div class="flex flex-col items-center mb-6">
-            <img src="logo.jpg" alt="Logo AD Brás" class="logo-ad shadow-lg">
+            <img src="https://placehold.co/100x100/A0A0A0/FFFFFF?text=LOGO" alt="Logo AD Brás" class="logo-ad shadow-lg rounded-full w-24 h-24 object-cover mb-4">
             <h1 class="text-3xl font-bold text-center text-gray-900 drop-shadow mb-1">
                 Controle de Presença
             </h1>
             <span class="text-lg text-gray-700 font-medium tracking-wide">AD Campo Vila Solange - Brás</span>
         </div>
 
+        <!-- Seção de Filtros -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div>
                 <label for="filterName" class="block text-sm font-medium text-gray-700 mb-1">Nome:</label>
-                <!-- CLASSE ATUALIZADA: added more Tailwind classes for styling -->
                 <input type="text" id="filterName" placeholder="Buscar por nome" class="input-field w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
             </div>
             <div>
                 <label for="filterPeriodo" class="block text-sm font-medium text-gray-700 mb-1">Período:</label>
-                <!-- CLASSE ATUALIZADA: added more Tailwind classes for styling -->
                 <select id="filterPeriodo" class="input-field w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                     <option value="">Todos</option>
                     <option value="Manhã">Manhã</option>
@@ -40,30 +40,36 @@
             </div>
             <div>
                 <label for="filterLider" class="block text-sm font-medium text-gray-700 mb-1">Líder:</label>
-                <!-- CLASSE ATUALIZADA: added more Tailwind classes for styling -->
                 <select id="filterLider" class="input-field w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                     <option value="">Todos</option>
-                    </select>
+                </select>
             </div>
             <div>
                 <label for="filterGape" class="block text-sm font-medium text-gray-700 mb-1">GAPE:</label>
-                <!-- CLASSE ATUALIZADA: added more Tailwind classes for styling -->
                 <select id="filterGape" class="input-field w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                     <option value="">Todos</option>
-                    </select>
+                </select>
             </div>
         </div>
 
+        <!-- Botões de Ação de Filtros -->
         <div class="flex flex-row gap-3 mb-6 justify-center bg-gradient-to-r from-blue-100 via-blue-50 to-blue-100 rounded-xl p-4 shadow-lg">
-            <button id="applyFiltersBtn" class="btn-primary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md">Aplicar Filtros</button>
-            <button id="clearFiltersBtn" class="btn-secondary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md">Limpar Filtros</button>
+            <button id="applyFiltersBtn" class="btn-primary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md rounded-lg">Aplicar Filtros</button>
+            <button id="clearFiltersBtn" class="btn-secondary-dark flex-1 flex items-center justify-center px-6 py-3 transition-all text-lg font-bold shadow-md rounded-lg">Limpar Filtros</button>
         </div>
 
-        <!-- NOVO: Loading indicator com position fixed e centralizado -->
+        <!-- Loading indicator global -->
         <div id="globalLoadingIndicator" class="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50 hidden">
-            <!-- O spinner de carregamento aparecerá aqui -->
+            <div class="flex flex-col items-center">
+                <svg class="animate-spin h-10 w-10 text-blue-700 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span class="text-blue-700 text-lg font-semibold">Carregando...</span>
+            </div>
         </div>
 
+        <!-- Área de Mensagens -->
         <div id="messageArea" class="message-box hidden" role="alert"></div>
 
         <!-- Botão para alternar a visibilidade do Dashboard -->
@@ -90,7 +96,6 @@
 
         <!-- Container que será animado (inicialmente oculto com max-h-0 e opacity-0) -->
         <div id="dashboardContainer" class="overflow-hidden transition-all duration-700 ease-in-out max-h-0 opacity-0">
-            <!-- CONTEÚDO ORIGINAL do dashboard-summary agora com id="actualDashboardSummary" -->
             <div id="actualDashboardSummary" class="dashboard-summary bg-blue-700 text-white rounded-xl shadow-lg p-6 mb-8 mt-6">
                 <h2 class="text-2xl font-bold mb-4 text-center">Resumo do Mês</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
@@ -98,6 +103,7 @@
                         <span class="block text-sm opacity-75">Presenças no Mês:</span>
                         <span id="dashboardPresencasMes" class="text-xl font-bold">--</span>
                     </div>
+                    <!-- Estes campos não são preenchidos por get-presencas-mes/total diretamente -->
                     <div>
                         <span class="block text-sm opacity-75">Período:</span>
                         <span id="dashboardPeriodo" class="text-xl font-bold">--</span>
@@ -111,13 +117,119 @@
                         <span id="dashboardGape" class="text-xl font-bold">--</span>
                     </div>
                 </div>
+                <!-- NOVO: Container para a lista de presenças totais por membro -->
+                <h3 class="text-xl font-bold mt-6 mb-3 text-center">Total de Presenças por Membro:</h3>
+                <ul id="totalCountsList" class="list-disc list-inside space-y-1 max-h-60 overflow-y-auto bg-blue-600 p-4 rounded-lg shadow-inner">
+                    <!-- Itens serão inseridos aqui pelo JavaScript -->
+                    <li class="text-sm text-center text-gray-200">Carregando...</li>
+                </ul>
             </div>
         </div>
 
+        <!-- Container dos Cards de Membros -->
         <div id="membersCardsContainer" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <!-- Cards de membros serão carregados aqui -->
         </div>
 
     </div>
 
+    <!-- Estilos CSS customizados (se você tiver um style.css) -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .main-card {
+            background: linear-gradient(145deg, #f0f4f8, #e0e4e8);
+            border-radius: 1.5rem; /* Mais arredondado */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .logo-ad {
+            border-radius: 50%;
+            border: 4px solid #3B82F6; /* Cor da borda azul */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .input-field {
+            transition: all 0.3s ease-in-out;
+        }
+        .input-field:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary-dark {
+            background-color: #1D4ED8; /* Azul escuro */
+            color: white;
+            border-radius: 0.75rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-primary-dark:hover {
+            background-color: #1E40AF; /* Azul mais escuro no hover */
+            transform: translateY(-2px);
+        }
+        .btn-secondary-dark {
+            background-color: #6B7280; /* Cinza escuro */
+            color: white;
+            border-radius: 0.75rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-secondary-dark:hover {
+            background-color: #4B5563; /* Cinza mais escuro no hover */
+            transform: translateY(-2px);
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .message-success {
+            background-color: #D1FAE5; /* Verde claro */
+            color: #065F46; /* Verde escuro */
+        }
+        .message-error {
+            background-color: #FEE2E2; /* Vermelho claro */
+            color: #991B1B; /* Vermelho escuro */
+        }
+        .message-info {
+            background-color: #DBEAFE; /* Azul claro */
+            color: #1E40AF; /* Azul escuro */
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+        .fade-in-row {
+            animation: fadeInRow 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Estilos para o botão toggleDashboardBtn */
+        #toggleDashboardBtn {
+            min-width: 180px; /* Garante que o botão não encolha muito */
+        }
+        /* Estilos para o container do dashboard */
+        #dashboardContainer {
+            transition: max-height 0.7s ease-in-out, opacity 0.7s ease-in-out;
+        }
+        #dashboardContainer.max-h-screen {
+            max-height: 1000px; /* Um valor grande o suficiente para a altura do conteúdo */
+            opacity: 1;
+        }
+        #dashboardContainer.max-h-0 {
+            max-height: 0;
+            opacity: 0;
+        }
+    </style>
 </body>
 </html>
